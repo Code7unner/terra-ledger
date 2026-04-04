@@ -1,0 +1,50 @@
+name: Contracts
+
+on:
+  push:
+    branches: ["feat/*", main]
+    paths: [contracts/**]
+  pull_request:
+    branches: [master]
+    paths: [contracts/**]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            contracts/target
+          key: cargo-${{ hashFiles('contracts/Cargo.lock') }}
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+
+      - name: Install Anchor CLI
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --force
+          avm install 1.0.0
+          avm use 1.0.0
+
+      - name: Build
+        working-directory: contracts
+        run: NO_DNA=1 anchor build
+
+      - name: Install JS deps
+        working-directory: contracts
+        run: yarn install --frozen-lockfile
+
+      - name: Test
+        working-directory: contracts
+        run: yarn test

@@ -1,1 +1,38 @@
+# Plans
 /docs/plans
+
+# Claude
+.claude/
+TASKS.md
+CLAUDE.md
+
+# Environment
+.env
+.env.local
+
+# Contracts
+contracts/target/
+contracts/node_modules/
+contracts/.anchor/
+
+# Backend
+backend/bin/
+backend/tmp/
+backend/vendor/
+
+# Frontend
+web/node_modules/
+web/dist/
+
+# SDK
+sdk/node_modules/
+sdk/dist/
+
+# E2E
+e2e/node_modules/
+e2e/test-results/
+e2e/playwright-report/
+
+# OS
+.DS_Store
+*.swp

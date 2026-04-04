@@ -1,0 +1,21 @@
+.layout {
+  min-height: 100vh;
+}
+
+.content {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: calc(var(--topbar-height) + var(--spacing-2xl)) var(--spacing-xl) var(--spacing-2xl);
+  animation: fadeIn 200ms ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: calc(var(--topbar-height) + var(--spacing-lg)) var(--spacing-md) var(--spacing-lg);
+  }
+}

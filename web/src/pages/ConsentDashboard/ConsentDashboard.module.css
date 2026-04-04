@@ -1,0 +1,152 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.title {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.subtitle {
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+  margin-top: calc(-1 * var(--spacing-sm));
+}
+
+.sectionTitle {
+  font-size: var(--font-h3);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Consent Status */
+.consentStatus {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.consentHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.consentDescription {
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Wallet Required */
+.walletRequired {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.walletRequired p {
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+/* Data Types */
+.dataTypes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.dataTypeItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.dataTypeName {
+  font-size: var(--font-body-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  min-width: 140px;
+}
+
+.dataTypeDesc {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+/* Access Log Table */
+.accessLogTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-body-sm);
+}
+
+.accessLogTable thead th {
+  text-align: left;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.accessLogTable tbody td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.logRow:hover {
+  background: var(--color-surface);
+}
+
+/* Placeholder */
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 768px) {
+  .actions {
+    flex-direction: column;
+  }
+
+  .dataTypeItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .dataTypeDesc {
+    text-align: left;
+  }
+
+  .accessLogTable {
+    font-size: var(--font-body-sm);
+  }
+}

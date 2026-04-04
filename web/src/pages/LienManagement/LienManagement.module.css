@@ -1,0 +1,127 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.title {
+  font-size: var(--font-h1);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.subtitle {
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+  margin-top: calc(-1 * var(--spacing-sm));
+}
+
+.sectionTitle {
+  font-size: var(--font-h3);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.searchRow {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: flex-end;
+  margin-bottom: var(--spacing-md);
+}
+
+.searchRow > :first-child {
+  flex: 1;
+}
+
+.lienList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.lienItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.lienInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.lienAmount {
+  font-weight: 600;
+  font-size: var(--font-body-sm);
+}
+
+.lienWallet {
+  font-size: var(--font-caption);
+  color: var(--color-text-secondary);
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+}
+
+.walletWarning {
+  font-size: var(--font-body-sm);
+  color: var(--color-warning, #b8860b);
+  background: var(--color-warning-bg, #fff8e1);
+  border: 1px solid var(--color-warning-border, #ffe082);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.txProgress {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--spacing-xs) 0;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.explorerLink {
+  color: var(--color-primary, #6366f1);
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.explorerLink:hover {
+  opacity: 0.8;
+}
+
+.statusSuccess {
+  font-size: var(--font-body-sm);
+  color: var(--color-success);
+  text-align: center;
+}
+
+.statusError {
+  font-size: var(--font-body-sm);
+  color: var(--color-danger);
+  text-align: center;
+}

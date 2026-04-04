@@ -1,0 +1,53 @@
+.container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.svg {
+  width: 100%;
+  height: 160px;
+}
+
+.gridLine {
+  stroke: var(--color-border);
+  stroke-width: 0.5;
+  stroke-dasharray: 4 4;
+}
+
+.axisLabel {
+  font-size: 10px;
+  fill: var(--color-text-secondary);
+}
+
+.line {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dot {
+  stroke: var(--color-surface);
+  stroke-width: 2;
+  cursor: pointer;
+  transition: r var(--transition);
+}
+
+.dot:hover {
+  r: 7;
+}
+
+.seasonLabel {
+  font-size: 9px;
+  fill: var(--color-text-secondary);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+}

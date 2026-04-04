@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: terraledger
+      POSTGRES_USER: terraledger
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-terraledger}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U terraledger"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  backend:
+    image: terraledger-backend:latest
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://terraledger:${POSTGRES_PASSWORD:-terraledger}@postgres:5432/terraledger?sslmode=disable
+      SOLANA_RPC_URL: ${SOLANA_RPC_URL}
+      TERRA_TOKEN_PROGRAM_ID: 2eAqpJ7yjso7FDA4sDQLJQioNCRuoYSUeha2Y88NRRMX
+      LIEN_REGISTRY_PROGRAM_ID: 3qYHSTPeRLRDfWmtzEhiaHpT2kchgW8GqaYcwmDbKnq4
+      RELAY_KEYPAIR_PATH: /run/secrets/relay_keypair
+      HELIUS_API_KEY: ${HELIUS_API_KEY}
+      HELIUS_WEBHOOK_SECRET: ${HELIUS_WEBHOOK_SECRET}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
+      COPERNICUS_CLIENT_ID: ${COPERNICUS_CLIENT_ID}
+      COPERNICUS_CLIENT_SECRET: ${COPERNICUS_CLIENT_SECRET}
+      KEEPER_INTERVAL: ${KEEPER_INTERVAL:-6h}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+volumes:
+  pgdata:

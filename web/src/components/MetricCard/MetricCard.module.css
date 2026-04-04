@@ -1,0 +1,26 @@
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.label {
+  font-size: var(--font-caption);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.value {
+  font-size: var(--font-h2);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.trend {
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  color: var(--color-success);
+}

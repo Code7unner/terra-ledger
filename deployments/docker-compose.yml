@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: terraledger
+      POSTGRES_PASSWORD: terraledger
+      POSTGRES_DB: terraledger
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U terraledger"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgres://terraledger:terraledger@postgres:5432/terraledger?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../backend:/app
+      - ~/.config/solana/id.json:/root/.config/solana/id.json:ro
+    command: ["air", "-c", ".air.toml"]
+
+volumes:
+  pgdata:
