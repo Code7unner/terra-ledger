@@ -39,7 +39,7 @@ jobs:
 
       - name: Build
         working-directory: contracts
-        run: NO_DNA=1 anchor build
+        run: NO_DNA=1 anchor build --ignore-keys
 
       - name: Install JS deps
         working-directory: contracts
