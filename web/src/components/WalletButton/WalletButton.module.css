@@ -1,0 +1,210 @@
+.wrapper {
+  position: relative;
+}
+
+.connected {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.connected:hover {
+  border-color: var(--color-primary);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+.address {
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.chevron {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--color-text-secondary);
+  transition: transform var(--transition);
+  margin-left: var(--spacing-xs);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-sm));
+  right: 0;
+  min-width: 240px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  animation: fadeIn 150ms ease-out;
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdownTitle {
+  margin: 0;
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-xs);
+  font-size: var(--font-caption);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.connectorList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.connectorItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.connectorItem:hover {
+  background: var(--color-surface-hover);
+}
+
+.connectorIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+}
+
+.connectorName {
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.noWallets {
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.noWalletsText {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.noWalletsHint {
+  margin: 0;
+  font-size: var(--font-caption);
+  color: var(--color-text-secondary);
+}
+
+.dropdownFooter {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.installLink {
+  font-size: var(--font-caption);
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: opacity var(--transition);
+}
+
+.installLink:hover {
+  opacity: 0.8;
+}
+
+.accountHeader {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.copyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: var(--spacing-xs);
+}
+
+.accountAddress {
+  font-family: monospace;
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.copyIcon {
+  font-size: var(--font-caption);
+  font-weight: 600;
+  color: var(--color-primary);
+  transition: opacity var(--transition);
+}
+
+.copyRow:hover .copyIcon {
+  opacity: 0.8;
+}
+
+.connectorLabel {
+  font-size: var(--font-caption);
+  color: var(--color-text-secondary);
+}
+
+.accountActions {
+  padding: var(--spacing-xs) 0;
+}
+
+.actionItem {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--font-body-sm);
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.actionItem:hover {
+  background: var(--color-surface-hover);
+}
+
+.actionDanger {
+  color: var(--color-danger);
+}

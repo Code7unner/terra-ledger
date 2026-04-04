@@ -1,0 +1,23 @@
+[package]
+name = "terra-token"
+version = "0.1.0"
+description = "TerraLedger productivity certificate layer"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "terra_token"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+anchor-debug = []
+custom-heap = []
+custom-panic = []
+
+[dependencies]
+anchor-lang = "1.0.0"

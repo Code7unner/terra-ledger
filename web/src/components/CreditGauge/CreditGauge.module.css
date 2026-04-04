@@ -1,0 +1,31 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.svg {
+  width: 180px;
+  height: 110px;
+}
+
+.fill {
+  transition: stroke-dashoffset 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.grade {
+  font-size: 32px;
+  font-weight: 700;
+  fill: var(--color-text);
+}
+
+.score {
+  font-size: 14px;
+  fill: var(--color-text-secondary);
+}
+
+.ltv {
+  font-size: var(--font-body-sm);
+  color: var(--color-text-secondary);
+}

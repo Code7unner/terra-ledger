@@ -1,0 +1,17 @@
+use anchor_lang::prelude::*;
+
+#[error_code]
+pub enum TerraTokenError {
+    #[msg("Cadastral number exceeds maximum length")]
+    CadastralTooLong,
+    #[msg("Parcel is not KYC verified")]
+    ParcelNotVerified,
+    #[msg("Too early for seasonal check")]
+    TooEarlyForSeasonalCheck,
+    #[msg("Risk flag is set — operation blocked")]
+    RiskFlagSet,
+    #[msg("Invalid land class (must be 1-8)")]
+    InvalidLandClass,
+    #[msg("Area must be greater than zero")]
+    InvalidArea,
+}

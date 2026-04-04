@@ -1,0 +1,12 @@
+{
+  "name": "TerraLedger — Lien Registry",
+  "project_url": "https://github.com/code7unner/terra-ledger",
+  "contacts": [
+    "email:contact@vectra.dev"
+  ],
+  "policy": "https://github.com/code7unner/terra-ledger/blob/master/SECURITY.md",
+  "preferred_languages": ["en"],
+  "source_code": "https://github.com/code7unner/terra-ledger/tree/master/contracts/programs/lien_registry",
+  "auditors": [],
+  "acknowledgements": ""
+}
