@@ -5,9 +5,16 @@
 }
 
 .title {
+  font-family: var(--font-heading);
   font-size: var(--font-h1);
   font-weight: 700;
   color: var(--color-text);
+}
+
+.title::before {
+  content: '// ';
+  color: var(--color-text-muted);
+  font-weight: inherit;
 }
 
 .subtitle {
@@ -17,6 +24,7 @@
 }
 
 .sectionTitle {
+  font-family: var(--font-heading);
   font-size: var(--font-h3);
   font-weight: 600;
   color: var(--color-text);
@@ -31,11 +39,25 @@
 
 .placeholder {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-sm);
   min-height: 120px;
+  text-align: center;
+}
+
+.placeholderTitle {
   font-size: var(--font-body);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.placeholderHint {
+  font-size: var(--font-body-sm);
   color: var(--color-text-secondary);
+  max-width: 360px;
+  line-height: 1.5;
 }
 
 .errorText {
@@ -109,7 +131,7 @@
 }
 
 .explorerLink:hover {
-  color: var(--color-primary-hover, var(--color-primary));
+  color: var(--color-primary-hover);
   text-decoration: none;
 }
 

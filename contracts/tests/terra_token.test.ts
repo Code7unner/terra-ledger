@@ -11,7 +11,32 @@ import {
   TEST_EGISS_HASH,
 } from "./helpers/setup";
 
-const { SystemProgram } = anchor.web3;
+const { Keypair, PublicKey, SystemProgram } = anchor.web3;
+
+// Token-2022 program ID
+const TOKEN_2022_PROGRAM_ID = new PublicKey(
+  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+);
+
+// Associated Token Account program ID
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
+  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+);
+
+/**
+ * Derive the associated token account address for a given owner and mint,
+ * using the Token-2022 program as the token program.
+ */
+function getAssociatedTokenAddress(
+  mint: anchor.web3.PublicKey,
+  owner: anchor.web3.PublicKey,
+): anchor.web3.PublicKey {
+  const [address] = PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), TOKEN_2022_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+  );
+  return address;
+}
 
 describe("terra_token", () => {
   let env: TestEnv;
@@ -157,14 +182,25 @@ describe("terra_token", () => {
   describe("mint_certificate", () => {
     it("mints a certificate and increments counters", async () => {
       const [parcelPda] = getParcelPda(env.terraToken, TEST_CADASTRAL);
+      const certMint = Keypair.generate();
+      const tokenAccount = getAssociatedTokenAddress(
+        certMint.publicKey,
+        env.farmer.publicKey,
+      );
 
       await env.terraToken.methods
-        .mintCertificate(TEST_CADASTRAL, "2026-Q1", 760)
+        .mintCertificate(TEST_CADASTRAL, "2026-Q1", 760, "wheat")
         .accountsStrict({
           parcelConfig: parcelPda,
+          certificateMint: certMint.publicKey,
+          tokenAccount,
+          owner: env.farmer.publicKey,
           mintAuthority: env.farmer.publicKey,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
         })
-        .signers([env.farmer])
+        .signers([env.farmer, certMint])
         .rpc();
 
       const parcel = await env.terraToken.account.parcelConfig.fetch(parcelPda);
@@ -174,14 +210,25 @@ describe("terra_token", () => {
 
     it("mints multiple certificates", async () => {
       const [parcelPda] = getParcelPda(env.terraToken, TEST_CADASTRAL);
+      const certMint = Keypair.generate();
+      const tokenAccount = getAssociatedTokenAddress(
+        certMint.publicKey,
+        env.farmer.publicKey,
+      );
 
       await env.terraToken.methods
-        .mintCertificate(TEST_CADASTRAL, "2026-Q2", 740)
+        .mintCertificate(TEST_CADASTRAL, "2026-Q2", 740, "barley")
         .accountsStrict({
           parcelConfig: parcelPda,
+          certificateMint: certMint.publicKey,
+          tokenAccount,
+          owner: env.farmer.publicKey,
           mintAuthority: env.farmer.publicKey,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
         })
-        .signers([env.farmer])
+        .signers([env.farmer, certMint])
         .rpc();
 
       const parcel = await env.terraToken.account.parcelConfig.fetch(parcelPda);
@@ -191,15 +238,26 @@ describe("terra_token", () => {
 
     it("fails when non-authority tries to mint", async () => {
       const [parcelPda] = getParcelPda(env.terraToken, TEST_CADASTRAL);
+      const certMint = Keypair.generate();
+      const tokenAccount = getAssociatedTokenAddress(
+        certMint.publicKey,
+        env.farmer.publicKey,
+      );
 
       try {
         await env.terraToken.methods
-          .mintCertificate(TEST_CADASTRAL, "2026-Q3", 700)
+          .mintCertificate(TEST_CADASTRAL, "2026-Q3", 700, "corn")
           .accountsStrict({
             parcelConfig: parcelPda,
+            certificateMint: certMint.publicKey,
+            tokenAccount,
+            owner: env.farmer.publicKey,
             mintAuthority: env.lender1.publicKey,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
           })
-          .signers([env.lender1])
+          .signers([env.lender1, certMint])
           .rpc();
         assert.fail("should have thrown");
       } catch (err) {

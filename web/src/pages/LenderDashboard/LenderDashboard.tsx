@@ -23,7 +23,7 @@ export function LenderDashboard() {
       <p className={styles.subtitle}>Search parcels and assess credit profiles</p>
 
       <Card padding="lg">
-        <form className={styles.searchForm} onSubmit={handleSearch}>
+        <form className={styles.searchForm} onSubmit={handleSearch} role="search" aria-label="Parcel search">
           <Input
             label="Cadastral Number"
             placeholder="Enter cadastral number..."
@@ -37,14 +37,17 @@ export function LenderDashboard() {
       </Card>
 
       <div className={styles.metrics}>
-        <MetricCard label="Active Liens" value="--" />
-        <MetricCard label="Total Parcels" value="--" />
-        <MetricCard label="Clean Parcels" value="--" />
+        <MetricCard label="Active Liens" value="0" />
+        <MetricCard label="Total Parcels" value="0" />
+        <MetricCard label="Clean Parcels" value="0" />
       </div>
 
       <Card padding="md">
         <div className={styles.placeholder}>
-          Search results will appear here
+          <p className={styles.placeholderTitle}>No parcel selected</p>
+          <p className={styles.placeholderHint}>
+            Enter a cadastral number above to view parcel details and credit profile
+          </p>
         </div>
       </Card>
     </div>

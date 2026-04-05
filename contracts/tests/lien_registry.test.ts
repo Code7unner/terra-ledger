@@ -21,7 +21,28 @@ import {
 } from "./helpers/setup";
 import BN from "bn.js";
 
-const { SystemProgram } = anchor.web3;
+const { Keypair, PublicKey, SystemProgram } = anchor.web3;
+
+// Token-2022 program ID
+const TOKEN_2022_PROGRAM_ID = new PublicKey(
+  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+);
+
+// Associated Token Account program ID
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
+  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+);
+
+function getAssociatedTokenAddress(
+  mint: anchor.web3.PublicKey,
+  owner: anchor.web3.PublicKey,
+): anchor.web3.PublicKey {
+  const [address] = PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), TOKEN_2022_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+  );
+  return address;
+}
 
 describe("lien_registry", () => {
   let env: TestEnv;
@@ -75,6 +96,7 @@ describe("lien_registry", () => {
           parcelConfig: parcelPda,
           lender: env.lender1.publicKey,
           systemProgram: SystemProgram.programId,
+          terraTokenProgram: env.terraToken.programId,
         })
         .signers([env.lender1])
         .rpc();
@@ -109,6 +131,7 @@ describe("lien_registry", () => {
             parcelConfig: parcelPda,
             lender: env.lender2.publicKey,
             systemProgram: SystemProgram.programId,
+            terraTokenProgram: env.terraToken.programId,
           })
           .signers([env.lender2])
           .rpc();
@@ -168,6 +191,7 @@ describe("lien_registry", () => {
           parcelConfig: parcelPda2,
           lender: env.lender1.publicKey,
           systemProgram: SystemProgram.programId,
+          terraTokenProgram: env.terraToken.programId,
         })
         .signers([env.lender1])
         .rpc();
@@ -211,6 +235,7 @@ describe("lien_registry", () => {
           parcelConfig: parcelPda,
           lender: env.lender2.publicKey,
           systemProgram: SystemProgram.programId,
+          terraTokenProgram: env.terraToken.programId,
         })
         .signers([env.lender2])
         .rpc();
@@ -241,6 +266,7 @@ describe("lien_registry", () => {
             parcelConfig: fakeParcelPda,
             lender: env.lender1.publicKey,
             systemProgram: SystemProgram.programId,
+            terraTokenProgram: env.terraToken.programId,
           })
           .signers([env.lender1])
           .rpc();
@@ -286,6 +312,7 @@ describe("lien_registry", () => {
           parcelConfig: parcelPda,
           lender: env.lender1.publicKey,
           systemProgram: SystemProgram.programId,
+          terraTokenProgram: env.terraToken.programId,
         })
         .signers([env.lender1])
         .rpc();
@@ -305,6 +332,7 @@ describe("lien_registry", () => {
             parcelConfig: parcelPda,
             lender: env.lender1.publicKey,
             systemProgram: SystemProgram.programId,
+            terraTokenProgram: env.terraToken.programId,
           })
           .signers([env.lender1])
           .rpc();
@@ -332,13 +360,25 @@ describe("lien_registry", () => {
         .rpc();
 
       // Step 2: Mint a certificate for the parcel
+      const certMint = Keypair.generate();
+      const tokenAccount = getAssociatedTokenAddress(
+        certMint.publicKey,
+        env.farmer.publicKey,
+      );
+
       await env.terraToken.methods
-        .mintCertificate(TEST_CADASTRAL_INTEGRATION, "2026-Q1", 750)
+        .mintCertificate(TEST_CADASTRAL_INTEGRATION, "2026-Q1", 750, "wheat")
         .accountsStrict({
           parcelConfig: parcelPda,
+          certificateMint: certMint.publicKey,
+          tokenAccount,
+          owner: env.farmer.publicKey,
           mintAuthority: env.farmer.publicKey,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
         })
-        .signers([env.farmer])
+        .signers([env.farmer, certMint])
         .rpc();
 
       // Step 3: Register encumbrance with lender1
@@ -359,6 +399,7 @@ describe("lien_registry", () => {
           parcelConfig: parcelPda,
           lender: env.lender1.publicKey,
           systemProgram: SystemProgram.programId,
+          terraTokenProgram: env.terraToken.programId,
         })
         .signers([env.lender1])
         .rpc();
@@ -443,6 +484,7 @@ describe("lien_registry", () => {
           parcelConfig: parcelPda1,
           lender: env.lender1.publicKey,
           systemProgram: SystemProgram.programId,
+          terraTokenProgram: env.terraToken.programId,
         })
         .signers([env.lender1])
         .rpc();
@@ -464,6 +506,7 @@ describe("lien_registry", () => {
           parcelConfig: parcelPda2,
           lender: env.lender2.publicKey,
           systemProgram: SystemProgram.programId,
+          terraTokenProgram: env.terraToken.programId,
         })
         .signers([env.lender2])
         .rpc();

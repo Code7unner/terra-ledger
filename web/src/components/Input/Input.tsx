@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from 'react'
+import { useId, type InputHTMLAttributes } from 'react'
 import styles from './Input.module.css'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -7,15 +7,18 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string
 }
 
-export function Input({ label, suffix, error, className, ...props }: InputProps) {
+export function Input({ label, suffix, error, className, id, ...props }: InputProps) {
+  const autoId = useId()
+  const inputId = id ?? autoId
+
   return (
     <div className={`${styles.wrapper} ${className ?? ''}`}>
-      {label && <label className={styles.label}>{label}</label>}
+      {label && <label htmlFor={inputId} className={styles.label}>{label}</label>}
       <div className={`${styles.field} ${error ? styles.fieldError : ''}`}>
-        <input className={styles.input} {...props} />
+        <input id={inputId} className={styles.input} aria-invalid={!!error} aria-describedby={error ? `${inputId}-error` : undefined} {...props} />
         {suffix && <span className={styles.suffix}>{suffix}</span>}
       </div>
-      {error && <span className={styles.error}>{error}</span>}
+      {error && <span id={`${inputId}-error`} className={styles.error} role="alert">{error}</span>}
     </div>
   )
 }

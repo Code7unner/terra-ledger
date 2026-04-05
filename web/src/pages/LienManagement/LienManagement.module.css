@@ -5,9 +5,16 @@
 }
 
 .title {
+  font-family: var(--font-heading);
   font-size: var(--font-h1);
   font-weight: 700;
   color: var(--color-text);
+}
+
+.title::before {
+  content: '// ';
+  color: var(--color-text-muted);
+  font-weight: inherit;
 }
 
 .subtitle {
@@ -17,6 +24,7 @@
 }
 
 .sectionTitle {
+  font-family: var(--font-heading);
   font-size: var(--font-h3);
   font-weight: 600;
   color: var(--color-text);
@@ -73,18 +81,32 @@
 
 .placeholder {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-sm);
   min-height: 120px;
+  text-align: center;
+}
+
+.placeholderTitle {
   font-size: var(--font-body);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.placeholderHint {
+  font-size: var(--font-body-sm);
   color: var(--color-text-secondary);
+  max-width: 400px;
+  line-height: 1.5;
 }
 
 .walletWarning {
   font-size: var(--font-body-sm);
-  color: var(--color-warning, #b8860b);
-  background: var(--color-warning-bg, #fff8e1);
-  border: 1px solid var(--color-warning-border, #ffe082);
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
   border-radius: var(--radius-md);
   padding: var(--spacing-sm) var(--spacing-md);
   text-align: center;
@@ -105,7 +127,7 @@
 }
 
 .explorerLink {
-  color: var(--color-primary, #6366f1);
+  color: var(--color-primary);
   text-decoration: underline;
   font-weight: 500;
 }

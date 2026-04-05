@@ -205,7 +205,7 @@ export default function FarmerPortal() {
 
           {/* Transaction progress */}
           {txStatus !== 'idle' && (
-            <div className={styles.txProgress}>
+            <div className={styles.txProgress} aria-live="polite">
               <span>{TX_STATUS_LABELS[txStatus]}</span>
               {txStatus === 'done' && txSignature && (
                 <a
@@ -223,7 +223,7 @@ export default function FarmerPortal() {
             </div>
           )}
 
-          {error && <div className={styles.errorText}>{error}</div>}
+          {error && <div className={styles.errorText} role="alert">{error}</div>}
         </div>
       </Card>
 
@@ -255,7 +255,10 @@ export default function FarmerPortal() {
           </div>
         ) : (
           <div className={styles.placeholder}>
-            Register a parcel above to see it here
+            <p className={styles.placeholderTitle}>No parcels registered</p>
+            <p className={styles.placeholderHint}>
+              Fill in the form above to register your first parcel on-chain
+            </p>
           </div>
         )}
       </Card>

@@ -17,10 +17,7 @@ services:
     restart: always
 
   backend:
-    image: terraledger-backend:latest
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
+    image: ${IMAGE:-cr.yandex/crplju5glnlve3hv3m3m/terraledger-backend:latest}
     ports:
       - "3000:3000"
     environment:

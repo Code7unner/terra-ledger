@@ -62,6 +62,9 @@ func Start() {
 	// TODO: Phase 3
 	_ = repo.NewCopernicusClient(cfg.CopernicusClientID, cfg.CopernicusClientSecret, &logger)
 
+	// Signatures
+	signatureRepo := repo.NewSignaturePG(db, &logger)
+
 	// Consent
 	consentRepo := repo.NewConsentPG(db, &logger)
 
@@ -107,7 +110,7 @@ func Start() {
 	go keeper.Start(ctx)
 
 	reconciler := service.NewReconciler(
-		solanaRPC, cfg.TerraTokenProgramID, cfg.LienRegistryProgramID,
+		solanaRPC, signatureRepo, cfg.TerraTokenProgramID, cfg.LienRegistryProgramID,
 		60*time.Second, &logger,
 	)
 	go reconciler.Start(ctx)

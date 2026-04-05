@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,11 +11,12 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/entity"
-	mock "github.com/code7unner/decentrathon5/terra-ledger/backend/internal/usecase/repository/mock"
+	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/usecase/repository/mock"
 )
 
 type LienHandlerSuite struct {
@@ -22,7 +24,10 @@ type LienHandlerSuite struct {
 	ctrl       *gomock.Controller
 	lienRepo   *mock.MockLienRepo
 	parcelRepo *mock.MockParcelRepo
+	solana     *mock.MockSolanaClient
 	handler    *LienHandler
+
+	cadastral string
 }
 
 func TestLienHandlerSuite(t *testing.T) {
@@ -33,212 +38,231 @@ func (s *LienHandlerSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.lienRepo = mock.NewMockLienRepo(s.ctrl)
 	s.parcelRepo = mock.NewMockParcelRepo(s.ctrl)
-	s.handler = NewLienHandler(s.lienRepo, s.parcelRepo, nil, nil)
+	s.solana = mock.NewMockSolanaClient(s.ctrl)
+
+	logger := zerolog.Nop()
+	s.handler = NewLienHandler(s.lienRepo, s.parcelRepo, s.solana, &logger)
+	s.cadastral = fmt.Sprintf("KZ-%s-%03d", gofakeit.LetterN(4), gofakeit.IntRange(1, 999))
 }
 
-func (s *LienHandlerSuite) TearDownTest() {
-	s.ctrl.Finish()
+func (s *LienHandlerSuite) validLienInput() entity.RegisterLienInput {
+	return entity.RegisterLienInput{
+		CadastralNumber: s.cadastral,
+		LenderWallet:    gofakeit.HexUint(64),
+		AmountTenge:     int64(gofakeit.IntRange(1000000, 50000000)),
+		NotaryCertHash:  gofakeit.HexUint(64),
+	}
 }
 
-func (s *LienHandlerSuite) setupApp() *fiber.App {
-	app := fiber.New()
-	app.Post("/liens", s.handler.Register)
-	app.Post("/liens/:id/release", s.handler.Release)
-	app.Get("/parcels/:cadastral/liens", s.handler.ListByParcel)
-	return app
+type lienRegisterCase struct {
+	name           string
+	buildBody      func(s *LienHandlerSuite) []byte
+	setupMock      func(s *LienHandlerSuite)
+	expectedStatus int
 }
 
-func (s *LienHandlerSuite) TestLienHandler_Register() {
-	cadastral := gofakeit.LetterN(12)
-
-	tests := []struct {
-		name           string
-		body           func() []byte
-		mockSetup      func()
-		expectedStatus int
-	}{
+func lienRegisterCases() []lienRegisterCase {
+	return []lienRegisterCase{
 		{
-			name: "register success",
-			body: func() []byte {
-				input := entity.RegisterLienInput{
-					CadastralNumber: cadastral,
-					LenderWallet:    gofakeit.HexUint(64),
-					AmountTenge:     int64(gofakeit.IntRange(1000000, 50000000)),
-					NotaryCertHash:  gofakeit.HexUint(64),
-				}
-				b, _ := json.Marshal(input)
+			name: "success",
+			buildBody: func(s *LienHandlerSuite) []byte {
+				b, _ := json.Marshal(s.validLienInput())
 				return b
 			},
-			mockSetup: func() {
-				parcel := stubParcel(cadastral)
-
-				s.lienRepo.EXPECT().
-					GetActive(gomock.Any(), cadastral).
-					Return(nil, entity.ErrNotFound).
-					Times(1)
-				s.parcelRepo.EXPECT().
-					GetByCadastral(gomock.Any(), cadastral).
-					Return(parcel, nil).
-					Times(1)
-				s.lienRepo.EXPECT().
-					Create(gomock.Any(), matchCadastral(cadastral)).
-					Return(nil).
-					Times(1)
-			},
+			setupMock:      setupRegisterSuccess,
 			expectedStatus: http.StatusCreated,
 		},
 		{
-			name: "register double pledge",
-			body: func() []byte {
-				input := entity.RegisterLienInput{
-					CadastralNumber: cadastral,
-					LenderWallet:    gofakeit.HexUint(64),
-					AmountTenge:     int64(gofakeit.IntRange(1000000, 50000000)),
-					NotaryCertHash:  gofakeit.HexUint(64),
-				}
-				b, _ := json.Marshal(input)
+			name: "double_pledge_blocked",
+			buildBody: func(s *LienHandlerSuite) []byte {
+				b, _ := json.Marshal(s.validLienInput())
 				return b
 			},
-			mockSetup: func() {
-				existing := stubLien(cadastral, entity.LienStatusActive)
-
-				s.lienRepo.EXPECT().
-					GetActive(gomock.Any(), cadastral).
-					Return(existing, nil).
-					Times(1)
-			},
+			setupMock:      setupRegisterDoublePledge,
 			expectedStatus: http.StatusConflict,
 		},
 		{
-			name: "register parcel not found",
-			body: func() []byte {
-				input := entity.RegisterLienInput{
-					CadastralNumber: cadastral,
-					LenderWallet:    gofakeit.HexUint(64),
-					AmountTenge:     int64(gofakeit.IntRange(1000000, 50000000)),
-					NotaryCertHash:  gofakeit.HexUint(64),
-				}
-				b, _ := json.Marshal(input)
+			name: "parcel_not_found",
+			buildBody: func(s *LienHandlerSuite) []byte {
+				b, _ := json.Marshal(s.validLienInput())
 				return b
 			},
-			mockSetup: func() {
-				s.lienRepo.EXPECT().
-					GetActive(gomock.Any(), cadastral).
-					Return(nil, entity.ErrNotFound).
-					Times(1)
-				s.parcelRepo.EXPECT().
-					GetByCadastral(gomock.Any(), cadastral).
-					Return(nil, entity.ErrNotFound).
-					Times(1)
-			},
+			setupMock:      setupRegisterParcelNotFound,
 			expectedStatus: http.StatusNotFound,
 		},
+		{
+			name:           "invalid_json",
+			buildBody:      func(_ *LienHandlerSuite) []byte { return []byte("not-json") },
+			setupMock:      func(_ *LienHandlerSuite) {},
+			expectedStatus: http.StatusBadRequest,
+		},
 	}
+}
 
-	for _, tc := range tests {
+func setupRegisterSuccess(s *LienHandlerSuite) {
+	s.lienRepo.EXPECT().
+		GetActive(gomock.Any(), s.cadastral).
+		Return(nil, entity.ErrNotFound).
+		Times(1)
+	s.parcelRepo.EXPECT().
+		GetByCadastral(gomock.Any(), s.cadastral).
+		Return(stubParcel(s.cadastral), nil).
+		Times(1)
+	s.lienRepo.EXPECT().
+		Create(gomock.Any(), matchCadastral(s.cadastral)).
+		Return(nil).
+		Times(1)
+}
+
+func setupRegisterDoublePledge(s *LienHandlerSuite) {
+	existing := stubLien(s.cadastral, entity.LienStatusActive)
+	s.lienRepo.EXPECT().
+		GetActive(gomock.Any(), s.cadastral).
+		Return(existing, nil).
+		Times(1)
+}
+
+func setupRegisterParcelNotFound(s *LienHandlerSuite) {
+	s.lienRepo.EXPECT().
+		GetActive(gomock.Any(), s.cadastral).
+		Return(nil, entity.ErrNotFound).
+		Times(1)
+	s.parcelRepo.EXPECT().
+		GetByCadastral(gomock.Any(), s.cadastral).
+		Return(nil, entity.ErrNotFound).
+		Times(1)
+}
+
+func (s *LienHandlerSuite) TestRegister() {
+	for _, tc := range lienRegisterCases() {
 		s.Run(tc.name, func() {
 			s.SetupTest()
-			tc.mockSetup()
+			tc.setupMock(s)
 
-			app := s.setupApp()
-			req := httptest.NewRequest(http.MethodPost, "/liens", bytes.NewReader(tc.body()))
+			app := fiber.New()
+			app.Post("/liens", s.handler.Register)
+
+			body := tc.buildBody(s)
+			req := httptest.NewRequest(http.MethodPost, "/liens", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			resp, err := app.Test(req)
-
 			s.Require().NoError(err)
 			s.Equal(tc.expectedStatus, resp.StatusCode)
 		})
 	}
 }
 
-func (s *LienHandlerSuite) TestLienHandler_Release() {
-	lienID := uuid.New().String()
+type lienReleaseCase struct {
+	name           string
+	lienID         string
+	setupMock      func(s *LienHandlerSuite, id string)
+	expectedStatus int
+}
 
-	tests := []struct {
-		name           string
-		id             string
-		mockSetup      func()
-		expectedStatus int
-	}{
+func lienReleaseCases() []lienReleaseCase {
+	return []lienReleaseCase{
 		{
-			name: "release success",
-			id:   lienID,
-			mockSetup: func() {
+			name:   "success",
+			lienID: uuid.New().String(),
+			setupMock: func(s *LienHandlerSuite, id string) {
 				s.lienRepo.EXPECT().
-					UpdateStatus(gomock.Any(), lienID, matchLienStatus(entity.LienStatusReleased)).
+					UpdateStatus(gomock.Any(), id, entity.LienStatusReleased).
 					Return(nil).
 					Times(1)
 			},
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name: "release not found",
-			id:   lienID,
-			mockSetup: func() {
+			name:   "not_found",
+			lienID: uuid.New().String(),
+			setupMock: func(s *LienHandlerSuite, id string) {
 				s.lienRepo.EXPECT().
-					UpdateStatus(gomock.Any(), lienID, matchLienStatus(entity.LienStatusReleased)).
+					UpdateStatus(gomock.Any(), id, entity.LienStatusReleased).
 					Return(entity.ErrNotFound).
 					Times(1)
 			},
 			expectedStatus: http.StatusNotFound,
 		},
 	}
+}
 
-	for _, tc := range tests {
+func (s *LienHandlerSuite) TestRelease() {
+	for _, tc := range lienReleaseCases() {
 		s.Run(tc.name, func() {
 			s.SetupTest()
-			tc.mockSetup()
+			tc.setupMock(s, tc.lienID)
 
-			app := s.setupApp()
-			req := httptest.NewRequest(http.MethodPost, "/liens/"+tc.id+"/release", nil)
+			app := fiber.New()
+			app.Post("/liens/:id/release", s.handler.Release)
+
+			req := httptest.NewRequest(http.MethodPost,
+				fmt.Sprintf("/liens/%s/release", tc.lienID), nil)
 
 			resp, err := app.Test(req)
-
 			s.Require().NoError(err)
 			s.Equal(tc.expectedStatus, resp.StatusCode)
 		})
 	}
 }
 
-func (s *LienHandlerSuite) TestLienHandler_ListByParcel() {
-	cadastral := gofakeit.LetterN(12)
+type lienListCase struct {
+	name           string
+	setupMock      func(s *LienHandlerSuite)
+	expectedStatus int
+	expectedLen    int
+}
 
-	tests := []struct {
-		name           string
-		cadastral      string
-		mockSetup      func()
-		expectedStatus int
-	}{
+func lienListCases() []lienListCase {
+	return []lienListCase{
 		{
-			name:      "list success",
-			cadastral: cadastral,
-			mockSetup: func() {
+			name: "returns_list",
+			setupMock: func(s *LienHandlerSuite) {
 				liens := []entity.Encumbrance{
-					*stubLien(cadastral, entity.LienStatusActive),
-					*stubLien(cadastral, entity.LienStatusReleased),
+					*stubLien(s.cadastral, entity.LienStatusActive),
+					*stubLien(s.cadastral, entity.LienStatusReleased),
 				}
 				s.lienRepo.EXPECT().
-					ListByParcel(gomock.Any(), cadastral).
+					ListByParcel(gomock.Any(), s.cadastral).
 					Return(liens, nil).
 					Times(1)
 			},
 			expectedStatus: http.StatusOK,
+			expectedLen:    2,
+		},
+		{
+			name: "empty_list",
+			setupMock: func(s *LienHandlerSuite) {
+				s.lienRepo.EXPECT().
+					ListByParcel(gomock.Any(), s.cadastral).
+					Return([]entity.Encumbrance{}, nil).
+					Times(1)
+			},
+			expectedStatus: http.StatusOK,
+			expectedLen:    0,
 		},
 	}
+}
 
-	for _, tc := range tests {
+func (s *LienHandlerSuite) TestListByParcel() {
+	for _, tc := range lienListCases() {
 		s.Run(tc.name, func() {
 			s.SetupTest()
-			tc.mockSetup()
+			tc.setupMock(s)
 
-			app := s.setupApp()
-			req := httptest.NewRequest(http.MethodGet, "/parcels/"+tc.cadastral+"/liens", nil)
+			app := fiber.New()
+			app.Get("/parcels/:cadastral/liens", s.handler.ListByParcel)
+
+			req := httptest.NewRequest(http.MethodGet,
+				fmt.Sprintf("/parcels/%s/liens", s.cadastral), nil)
 
 			resp, err := app.Test(req)
-
 			s.Require().NoError(err)
 			s.Equal(tc.expectedStatus, resp.StatusCode)
+
+			var result []entity.Encumbrance
+			s.Require().NoError(json.NewDecoder(resp.Body).Decode(&result))
+			s.Len(result, tc.expectedLen)
 		})
 	}
 }

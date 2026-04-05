@@ -89,6 +89,18 @@ func LoadKeypair(path string) (solana.PrivateKey, error) {
 	return solana.PrivateKey(keyBytes), nil
 }
 
+func (r *SolanaRPC) GetRecentBlockhash(ctx context.Context) (string, error) {
+	resp, err := r.client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+	if err != nil {
+		return "", fmt.Errorf("solana rpc getLatestBlockhash: %w", err)
+	}
+	if resp == nil || resp.Value == nil {
+		return "", fmt.Errorf("solana rpc getLatestBlockhash: empty response")
+	}
+
+	return resp.Value.Blockhash.String(), nil
+}
+
 func (r *SolanaRPC) GetSignaturesForAddress(ctx context.Context, address string, limit int) ([]string, error) {
 	pk, err := solana.PublicKeyFromBase58(address)
 	if err != nil {

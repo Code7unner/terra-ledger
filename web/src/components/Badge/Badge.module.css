@@ -11,21 +11,21 @@
 }
 
 .active {
-  background: rgba(37, 99, 235, 0.1);
+  background: var(--color-primary-ring);
   color: var(--color-primary);
 }
 
 .released {
-  background: rgba(22, 163, 74, 0.1);
+  background: var(--color-success-alpha);
   color: var(--color-success);
 }
 
 .clean {
-  background: rgba(100, 116, 139, 0.1);
+  background: var(--color-muted-alpha);
   color: var(--color-text-secondary);
 }
 
 .warning {
-  background: rgba(217, 119, 6, 0.1);
+  background: var(--color-warning-alpha);
   color: var(--color-warning);
 }

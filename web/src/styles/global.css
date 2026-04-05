@@ -7,6 +7,7 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
 }
 
 body {
@@ -16,6 +17,10 @@ body {
   color: var(--color-text);
   background: var(--color-background);
   min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
 }
 
 a {
@@ -34,8 +39,20 @@ input {
   font: inherit;
   border: none;
   background: none;
-  outline: none;
   color: inherit;
+}
+
+input:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+input:focus-visible {
+  outline: none;
 }
 
 ul, ol {
@@ -45,4 +62,30 @@ ul, ol {
 img {
   display: block;
   max-width: 100%;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

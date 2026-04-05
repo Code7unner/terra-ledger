@@ -15,13 +15,13 @@
 }
 
 .grade {
-  font-size: 32px;
+  font-size: var(--font-h1);
   font-weight: 700;
   fill: var(--color-text);
 }
 
 .score {
-  font-size: 14px;
+  font-size: var(--font-body-sm);
   fill: var(--color-text-secondary);
 }
 

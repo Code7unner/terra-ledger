@@ -117,8 +117,12 @@ export default function ConsentDashboard() {
         <p className={styles.subtitle}>PDPA consent tracking and management</p>
         <Card padding="lg">
           <div className={styles.walletRequired}>
+            <div className={styles.walletIcon} aria-hidden="true">🔗</div>
             <h2 className={styles.sectionTitle}>Wallet Required</h2>
-            <p>Please connect your wallet to manage data processing consent.</p>
+            <p>Connect your Solana wallet to manage data processing consent for your parcels.</p>
+            <p className={styles.walletHint}>
+              Your consent preferences are stored on-chain and can be revoked at any time.
+            </p>
           </div>
         </Card>
       </div>
@@ -208,7 +212,14 @@ export default function ConsentDashboard() {
           </table>
         ) : (
           <div className={styles.placeholder}>
-            {loading ? 'Loading access log...' : 'No access log entries yet'}
+            <p className={styles.placeholderTitle}>
+              {loading ? 'Loading access log...' : 'No access log entries'}
+            </p>
+            {!loading && (
+              <p className={styles.placeholderHint}>
+                When lenders access your data, each request will appear here
+              </p>
+            )}
           </div>
         )}
       </Card>

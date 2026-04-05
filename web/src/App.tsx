@@ -11,9 +11,12 @@ const ConsentDashboard = lazy(() => import('./pages/ConsentDashboard/ConsentDash
 
 function PageFallback() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)', padding: 'var(--spacing-lg)' }}>
-      <Skeleton width="40%" height="32px" />
-      <Skeleton width="100%" height="120px" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+        <Skeleton width="280px" height="38px" />
+        <Skeleton width="200px" height="20px" />
+      </div>
+      <Skeleton width="100%" height="160px" />
       <Skeleton width="100%" height="120px" />
     </div>
   )

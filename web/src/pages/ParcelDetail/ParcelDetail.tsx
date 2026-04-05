@@ -34,7 +34,7 @@ export default function ParcelDetail() {
   if (error) {
     return (
       <div className={styles.page}>
-        <div className={styles.errorState}>
+        <div className={styles.errorState} role="alert">
           <h2>Failed to load parcel</h2>
           <p>{error}</p>
         </div>
@@ -46,7 +46,12 @@ export default function ParcelDetail() {
     return (
       <div className={styles.page}>
         <h1 className={styles.title}>Parcel {cadastral}</h1>
-        <p className={styles.placeholder}>No data available</p>
+        <div className={styles.placeholder}>
+          <p className={styles.placeholderTitle}>No data available</p>
+          <p className={styles.placeholderHint}>
+            This parcel may not be registered yet or the backend is unreachable
+          </p>
+        </div>
       </div>
     )
   }
@@ -66,7 +71,7 @@ export default function ParcelDetail() {
       <div className={styles.metrics}>
         <MetricCard
           label="Credit Score"
-          value={credit_intelligence ? String(credit_intelligence.ai_score) : '--'}
+          value={credit_intelligence ? String(credit_intelligence.ai_score) : 'N/A'}
         />
         <MetricCard
           label="Active Liens"
@@ -156,7 +161,10 @@ export default function ParcelDetail() {
             ))}
           </div>
         ) : (
-          <div className={styles.placeholder}>No liens recorded</div>
+          <div className={styles.placeholder}>
+            <p className={styles.placeholderTitle}>No liens recorded</p>
+            <p className={styles.placeholderHint}>This parcel has no active encumbrances</p>
+          </div>
         )}
         <div className={styles.lienMeta}>
           Total historical liens: {encumbrances.lien_count_historical}

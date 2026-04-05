@@ -168,7 +168,7 @@ export default function LienManagement() {
       <p className={styles.subtitle}>Register and release liens on parcels</p>
 
       {!walletConnected && (
-        <div className={styles.walletWarning}>
+        <div className={styles.walletWarning} role="alert">
           Connect your wallet to sign on-chain transactions.
           REST-only mode is available but liens will not be recorded on Solana.
         </div>
@@ -214,13 +214,13 @@ export default function LienManagement() {
           </Button>
 
           {registerTxStatus !== 'idle' && registerTxStatus !== 'done' && registerTxStatus !== 'error' && (
-            <div className={styles.txProgress}>
+            <div className={styles.txProgress} aria-live="polite">
               {TX_STATUS_LABELS[registerTxStatus]}
             </div>
           )}
 
           {registerTxStatus === 'done' && registerTxSignature && (
-            <div className={styles.statusSuccess}>
+            <div className={styles.statusSuccess} role="status">
               On-chain transaction confirmed.{' '}
               <a
                 href={explorerUrl(registerTxSignature)}
@@ -234,7 +234,7 @@ export default function LienManagement() {
           )}
 
           {registerTxStatus === 'error' && (
-            <div className={styles.statusError}>{registerTxError || 'On-chain transaction failed'}</div>
+            <div className={styles.statusError} role="alert">{registerTxError || 'On-chain transaction failed'}</div>
           )}
 
           {registerStatus === 'success' && (
@@ -265,13 +265,13 @@ export default function LienManagement() {
           </Button>
 
           {releaseTxStatus !== 'idle' && releaseTxStatus !== 'done' && releaseTxStatus !== 'error' && (
-            <div className={styles.txProgress}>
+            <div className={styles.txProgress} aria-live="polite">
               {TX_STATUS_LABELS[releaseTxStatus]}
             </div>
           )}
 
           {releaseTxStatus === 'done' && releaseTxSignature && (
-            <div className={styles.statusSuccess}>
+            <div className={styles.statusSuccess} role="status">
               On-chain release confirmed.{' '}
               <a
                 href={explorerUrl(releaseTxSignature)}
@@ -285,7 +285,7 @@ export default function LienManagement() {
           )}
 
           {releaseTxStatus === 'error' && (
-            <div className={styles.statusError}>{releaseTxError || 'On-chain release failed'}</div>
+            <div className={styles.statusError} role="alert">{releaseTxError || 'On-chain release failed'}</div>
           )}
 
           {releaseStatus === 'success' && (
@@ -336,7 +336,14 @@ export default function LienManagement() {
           </div>
         ) : (
           <div className={styles.placeholder}>
-            {searchCadastral ? 'No liens found' : 'Enter cadastral number and click Load'}
+            <p className={styles.placeholderTitle}>
+              {searchCadastral ? 'No liens found' : 'No liens loaded'}
+            </p>
+            <p className={styles.placeholderHint}>
+              {searchCadastral
+                ? 'This parcel has no active or released liens on record'
+                : 'Enter a cadastral number above and click Load to view liens'}
+            </p>
           </div>
         )}
       </Card>

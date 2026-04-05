@@ -1,17 +1,33 @@
 :root {
-  /* Colors */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-success: #16a34a;
-  --color-danger: #dc2626;
-  --color-warning: #d97706;
-  --color-surface: #ffffff;
-  --color-surface-hover: #f1f5f9;
-  --color-background: #f8fafc;
-  --color-text: #1e293b;
-  --color-text-secondary: #64748b;
-  --color-border: #e2e8f0;
-  --color-border-focus: #2563eb;
+  /* Colors — Colosseum dark theme */
+  --color-primary: #25d0ab;
+  --color-primary-hover: #1fa88a;
+  --color-primary-bg: #04312c;
+  --color-success: #25d0ab;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-surface: #141414;
+  --color-surface-hover: #1c1c1c;
+  --color-background: #0f0f0f;
+  --color-text: #ededed;
+  --color-text-secondary: #a0a0a0;
+  --color-text-muted: #505050;
+  --color-border: #232323;
+  --color-border-hover: #343434;
+  --color-border-focus: #25d0ab;
+  --color-primary-alpha: rgba(37, 208, 171, 0.08);
+  --color-primary-ring: rgba(37, 208, 171, 0.15);
+  --color-danger-ring: rgba(239, 68, 68, 0.15);
+  --color-danger-hover: #dc2626;
+  --color-success-alpha: rgba(37, 208, 171, 0.15);
+  --color-warning-alpha: rgba(245, 158, 11, 0.1);
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-warning-border: rgba(245, 158, 11, 0.3);
+  --color-muted-alpha: rgba(160, 160, 160, 0.1);
+
+  /* Shadows */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
 
   /* Spacing */
   --spacing-xs: 4px;
@@ -22,13 +38,15 @@
   --spacing-2xl: 48px;
   --spacing-3xl: 64px;
 
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* Radii — sharp like Colosseum (4px everywhere) */
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
   --radius-full: 9999px;
 
   /* Typography */
+  --font-heading: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
   --font-h1: 32px;
   --font-h2: 24px;
   --font-h3: 20px;
@@ -41,5 +59,5 @@
 
   /* Layout */
   --container: 960px;
-  --topbar-height: 60px;
+  --topbar-height: 64px;
 }

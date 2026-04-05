@@ -5,6 +5,7 @@
 .claude/
 TASKS.md
 CLAUDE.md
+.gstack/
 
 # Environment
 .env
@@ -14,6 +15,7 @@ CLAUDE.md
 contracts/target/
 contracts/node_modules/
 contracts/.anchor/
+contracts/test-ledger/
 
 # Backend
 backend/bin/
@@ -36,3 +38,4 @@ e2e/playwright-report/
 # OS
 .DS_Store
 *.swp
+.gstack/

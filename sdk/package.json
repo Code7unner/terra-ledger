@@ -1,12 +1,15 @@
 {
   "name": "@terraledger/sdk",
-  "version": "0.1.0",
-  "description": "TerraLedger SDK — REST API client (temporary, see TODO in client.ts)",
+  "version": "0.2.0",
+  "description": "TerraLedger SDK — on-chain Solana client",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@solana/kit": "^6.5.0"
   },
   "devDependencies": {
     "typescript": "~5.7.0"
