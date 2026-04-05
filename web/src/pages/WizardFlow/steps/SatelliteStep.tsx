@@ -29,7 +29,8 @@ const MIN_LOADING_MS = 8000
 const MSG_INTERVAL_MS = 2500
 
 interface NdviResponse {
-  ndvi_score: number
+  ndvi: number
+  ndvi_score?: number
 }
 
 function ndviColor(score: number): string {
@@ -64,7 +65,7 @@ export function SatelliteStep({ cadastral, isDemo, onUpdate, onNext }: Props) {
         const resp = await get<NdviResponse>(
           `/api/v1/parcels/${encodeURIComponent(cadastral)}/ndvi`,
         )
-        return resp.ndvi_score
+        return resp.ndvi ?? resp.ndvi_score ?? 0
       } catch (err) {
         toast(err instanceof Error ? err.message : 'Satellite API unavailable, using estimated data', 'info')
         return 0.72

@@ -60,7 +60,7 @@ func Start() {
 	solanaRPC := repo.NewSolanaRPC(cfg.SolanaRPCURL, &logger)
 	claudeScorer := repo.NewClaudeScorer(cfg.AnthropicAPIKey, cfg.AnthropicModel, &logger)
 	// TODO: Phase 3
-	_ = repo.NewCopernicusClient(cfg.CopernicusClientID, cfg.CopernicusClientSecret, &logger)
+	copernicusClient := repo.NewCopernicusClient(cfg.CopernicusClientID, cfg.CopernicusClientSecret, &logger)
 
 	// Signatures
 	signatureRepo := repo.NewSignaturePG(db, &logger)
@@ -69,7 +69,7 @@ func Start() {
 	consentRepo := repo.NewConsentPG(db, &logger)
 
 	// Handlers
-	parcelHandler := handler.NewParcelHandler(parcelRepo, solanaRPC, &logger)
+	parcelHandler := handler.NewParcelHandler(parcelRepo, solanaRPC, copernicusClient, &logger)
 	certHandler := handler.NewCertificateHandler(certRepo, parcelRepo)
 	lienHandler := handler.NewLienHandler(lienRepo, parcelRepo, solanaRPC, &logger)
 	creditHandler := handler.NewCreditHandler(parcelRepo, certRepo, lienRepo, scoreRepo, consentRepo, claudeScorer)

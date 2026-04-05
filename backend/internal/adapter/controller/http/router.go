@@ -35,6 +35,12 @@ func RegisterRoutes(app *fiber.App, h *Handlers, lenderRepo repository.LenderRep
 	// Webhook (own auth)
 	app.Post("/webhooks/helius", h.Webhook.Handle)
 
+	// Phantom mobile deeplink relay (no auth — public endpoints)
+	phantom := NewPhantomHandler()
+	app.Post("/api/v1/phantom/session", phantom.CreateSession)
+	app.Get("/api/v1/phantom/callback", phantom.Callback)
+	app.Get("/api/v1/phantom/poll/:session", phantom.Poll)
+
 	// Authenticated API
 	api := app.Group("/api/v1", APIKeyAuth(lenderRepo, h.Logger))
 
@@ -42,6 +48,7 @@ func RegisterRoutes(app *fiber.App, h *Handlers, lenderRepo repository.LenderRep
 	api.Post("/parcels", h.Parcel.Register)
 	api.Get("/parcels/:cadastral", h.Parcel.Get)
 	api.Get("/parcels/:cadastral/profile", h.Credit.GetProfile)
+	api.Get("/parcels/:cadastral/ndvi", h.Parcel.GetNDVI)
 
 	// Certificates
 	api.Post("/parcels/:cadastral/certificates", h.Certificate.Mint)

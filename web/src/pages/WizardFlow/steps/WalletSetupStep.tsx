@@ -1,55 +1,94 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSignAndSend } from '../../../solana/transaction'
+import { usePhantomDeeplink } from '../../../solana/usePhantomDeeplink'
+import { Button } from '../../../components/Button/Button'
 import styles from '../WizardFlow.module.css'
 
 interface Props {
   onNext: () => void
 }
 
-const QR_URL =
-  'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fphantom.app%2Fdownload&bgcolor=141414&color=ededed'
+const QR_API = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=141414&color=ededed&data='
 
 export function WalletSetupStep({ onNext }: Props) {
   const { connected } = useSignAndSend()
-  const hasExtension = 'solana' in window
+  const { connectViaQR, qrUrl, status, walletAddress, error } = usePhantomDeeplink()
+  const hasExtension = typeof window !== 'undefined' && 'solana' in window
+  const advancedRef = useRef(false)
 
+  // Auto-advance when wallet connects (via extension or deeplink)
   useEffect(() => {
-    if (connected) {
+    if ((connected || status === 'connected') && !advancedRef.current) {
+      advancedRef.current = true
       onNext()
     }
-  }, [connected, onNext])
+  }, [connected, status, onNext])
+
+  // Auto-start QR flow if no extension
+  useEffect(() => {
+    if (!hasExtension && status === 'idle') {
+      connectViaQR()
+    }
+  }, [hasExtension, status, connectViaQR])
 
   return (
     <div className={styles.stepCenter}>
-      <h2 className={styles.stepTitle}>Connect Your Wallet</h2>
+      <h2 className={styles.stepTitle}>
+        <span className={styles.heroSlash}>//</span> Connect Your Wallet
+      </h2>
       <p className={styles.stepDesc}>
-        Your wallet is like a digital ID for your land. It lets you prove
-        ownership and interact with the blockchain securely.
+        Your wallet is like a digital ID for your land. It proves ownership without paperwork.
       </p>
 
       {hasExtension ? (
         <div className={styles.walletHelp}>
           <p className={styles.stepHint}>
-            Click <strong>Connect Wallet</strong> in the top right corner to
-            continue.
+            Click <strong>Connect Wallet</strong> in the top right corner to continue.
           </p>
         </div>
       ) : (
         <div className={styles.walletHelp}>
-          <div className={styles.qrPlaceholder}>
-            <img src={QR_URL} alt="Download Phantom wallet" width={200} height={200} />
-          </div>
-          <p className={styles.stepHint}>
-            Scan the QR code or{' '}
-            <a
-              href="https://phantom.app/download"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              click here
-            </a>{' '}
-            to install the Phantom wallet extension.
-          </p>
+          {status === 'waiting' && qrUrl && (
+            <>
+              <div className={styles.qrPlaceholder}>
+                <img
+                  src={`${QR_API}${encodeURIComponent(qrUrl)}`}
+                  alt="Connect with Phantom"
+                  width={250}
+                  height={250}
+                />
+              </div>
+              <p className={styles.stepHint}>
+                Open <strong>Phantom</strong> on your phone and scan this QR code
+              </p>
+              <div className={styles.loadingAnim}>
+                <div className={styles.spinner} />
+                <p className={styles.loadingMsg}>Waiting for approval...</p>
+              </div>
+            </>
+          )}
+
+          {status === 'connected' && walletAddress && (
+            <div>
+              <p className={styles.mintConfirm}>
+                Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}
+              </p>
+            </div>
+          )}
+
+          {status === 'error' && (
+            <div className={styles.walletHelp}>
+              <p className={styles.error}>{error}</p>
+              <Button variant="secondary" onClick={connectViaQR}>Try Again</Button>
+            </div>
+          )}
+
+          {status === 'idle' && (
+            <div className={styles.walletHelp}>
+              <div className={styles.spinner} />
+              <p className={styles.stepHint}>Preparing connection...</p>
+            </div>
+          )}
         </div>
       )}
     </div>

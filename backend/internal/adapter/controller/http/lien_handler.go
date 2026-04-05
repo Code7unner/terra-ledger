@@ -82,6 +82,9 @@ func (h *LienHandler) ListByParcel(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to list liens"})
 	}
+	if liens == nil {
+		liens = []entity.Encumbrance{}
+	}
 
 	return c.JSON(liens)
 }

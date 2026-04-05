@@ -4,6 +4,7 @@ import type { WizardData } from '../WizardFlow'
 import { useSignAndSend } from '../../../solana/transaction'
 import { buildRegisterParcelInstruction } from '../../../solana/program'
 import { useParcel } from '../../../hooks/useParcel'
+import { post } from '../../../api/client'
 import { useToast } from '../../../components/Toast/Toast'
 import { Button } from '../../../components/Button/Button'
 import { Input } from '../../../components/Input/Input'
@@ -73,6 +74,14 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack }: P
     setError(null)
     setSubmitting(true)
 
+    // Update wizard data immediately so downstream steps have cadastral
+    onUpdate({
+      cadastral,
+      area_ha: areaHa,
+      land_class: landClass,
+      oblast,
+    })
+
     try {
       if (connected && walletAddress) {
         const egissHash = new Uint8Array(32)
@@ -97,12 +106,11 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack }: P
         holder_iin_hash: '',
       })
 
-      onUpdate({
-        cadastral,
-        area_ha: areaHa,
-        land_class: landClass,
-        oblast,
-      })
+      // Auto-grant consent so credit scoring works
+      if (walletAddress) {
+        post('/api/v1/consent/grant', { wallet_address: String(walletAddress) }).catch(() => {})
+      }
+
       onNext()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to register parcel'

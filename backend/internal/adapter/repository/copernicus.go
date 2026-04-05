@@ -147,14 +147,33 @@ func (c *CopernicusClient) queryNDVI(ctx context.Context, cadastral string, lat,
 
 // querySentinelHubStats uses the Sentinel Hub Statistical API for NDVI.
 func (c *CopernicusClient) querySentinelHubStats(ctx context.Context, lat, lon float64, startDate, endDate string) (float64, error) {
-	evalscript := `//VERSION=3\nfunction setup(){return{input:["B04","B08"],output:[{id:"ndvi",bands:1}]}}\nfunction evaluatePixel(s){return[(s.B08-s.B04)/(s.B08+s.B04)]}`
+	payload := map[string]interface{}{
+		"input": map[string]interface{}{
+			"bounds": map[string]interface{}{
+				"bbox":       []float64{lon - 0.005, lat - 0.005, lon + 0.005, lat + 0.005},
+				"properties": map[string]string{"crs": "http://www.opengis.net/def/crs/EPSG/0/4326"},
+			},
+			"data": []map[string]interface{}{{
+				"type": "sentinel-2-l2a",
+				"dataFilter": map[string]interface{}{
+					"timeRange":        map[string]string{"from": startDate + "T00:00:00Z", "to": endDate + "T23:59:59Z"},
+					"maxCloudCoverage": 30,
+				},
+			}},
+		},
+		"aggregation": map[string]interface{}{
+			"timeRange":           map[string]string{"from": startDate + "T00:00:00Z", "to": endDate + "T23:59:59Z"},
+			"aggregationInterval": map[string]string{"of": "P1M"},
+			"evalscript":          "//VERSION=3\nfunction setup(){return{input:[\"B04\",\"B08\",\"dataMask\"],output:[{id:\"ndvi\",bands:1},{id:\"dataMask\",bands:1}]}}\nfunction evaluatePixel(s){var ndvi=(s.B08-s.B04)/(s.B08+s.B04);return{ndvi:[ndvi],dataMask:[s.dataMask]}}",
+		},
+	}
 
-	body := fmt.Sprintf(`{
-		"input":{"bounds":{"bbox":[%.4f,%.4f,%.4f,%.4f],"properties":{"crs":"http://www.opengis.net/def/crs/EPSG/0/4326"}},"data":[{"type":"sentinel-2-l2a","dataFilter":{"timeRange":{"from":"%sT00:00:00Z","to":"%sT23:59:59Z"},"maxCloudCoverage":30}}]},
-		"aggregation":{"timeRange":{"from":"%sT00:00:00Z","to":"%sT23:59:59Z"},"aggregationInterval":{"of":"P1M"},"evalscript":"%s"}
-	}`, lon-0.005, lat-0.005, lon+0.005, lat+0.005, startDate, endDate, startDate, endDate, evalscript)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return 0, fmt.Errorf("sentinel hub marshal: %w", err)
+	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sentinelHubStatsURL, bytes.NewBufferString(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sentinelHubStatsURL, bytes.NewReader(body))
 	if err != nil {
 		return 0, fmt.Errorf("sentinel hub request: %w", err)
 	}
@@ -171,7 +190,8 @@ func (c *CopernicusClient) querySentinelHubStats(ctx context.Context, lat, lon f
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("sentinel hub status %d", resp.StatusCode)
+		respBody, _ := io.ReadAll(resp.Body)
+		return 0, fmt.Errorf("sentinel hub status %d: %s", resp.StatusCode, respBody)
 	}
 
 	return parseSentinelHubStats(resp.Body)

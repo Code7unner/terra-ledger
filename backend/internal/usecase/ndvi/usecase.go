@@ -48,7 +48,7 @@ func (uc *UseCase) ProcessBatch(ctx context.Context, parcels []entity.Parcel) ma
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			lat, lon := centroidFor(parcel.CadastralNumber)
+			lat, lon := CentroidFor(parcel.CadastralNumber)
 			ndvi, err := uc.provider.FetchNDVI(ctx, parcel.CadastralNumber, lat, lon, "", "")
 			if err != nil {
 				uc.logger.Warn().
@@ -73,7 +73,8 @@ func (uc *UseCase) ProcessBatch(ctx context.Context, parcels []entity.Parcel) ma
 	return results
 }
 
-func centroidFor(cadastral string) (float64, float64) {
+// CentroidFor returns lat/lon for a cadastral number.
+func CentroidFor(cadastral string) (float64, float64) {
 	if c, ok := parcelCentroids[cadastral]; ok {
 		return c[0], c[1]
 	}
