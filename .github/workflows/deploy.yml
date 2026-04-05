@@ -57,6 +57,7 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
           VITE_SOLANA_RPC_URL: ${{ secrets.VITE_SOLANA_RPC_URL }}
 
       - name: Upload build artifact
