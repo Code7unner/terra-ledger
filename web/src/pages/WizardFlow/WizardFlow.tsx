@@ -22,6 +22,7 @@ export interface WizardData {
   creditScore: number | null
   creditGrade: string | null
   lienRegistered: boolean
+  walletAddress: string | null
 }
 
 const FARMER_STEPS = ['Wallet', 'Parcel', 'NDVI', 'Score', 'Profile']
@@ -35,6 +36,7 @@ const initialData: WizardData = {
   ndviScore: null,
   creditScore: null,
   creditGrade: null,
+  walletAddress: null,
   lienRegistered: false,
 }
 
@@ -85,7 +87,7 @@ export default function WizardFlow() {
       <div className={styles.stepContent}>
         {path === 'farmer' ? (
           <>
-            {step === 0 && <WalletSetupStep onNext={next} />}
+            {step === 0 && <WalletSetupStep onUpdate={updateData} onNext={next} />}
             {step === 1 && <RegisterParcelStep data={data} isDemo={isDemo} onUpdate={updateData} onNext={next} onBack={back} />}
             {step === 2 && <SatelliteStep cadastral={getCadastral()} isDemo={isDemo} onUpdate={updateData} onNext={next} />}
             {step === 3 && <CreditScoreStep cadastral={getCadastral()} isDemo={isDemo} onNext={next} />}
