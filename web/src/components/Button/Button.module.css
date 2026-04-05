@@ -45,7 +45,7 @@
 }
 
 .danger:hover:not(:disabled) {
-  background: #b91c1c;
+  background: var(--color-danger-hover);
 }
 
 /* Sizes */
