@@ -57,6 +57,7 @@
 
 .right {
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 @media (max-width: 1024px) {

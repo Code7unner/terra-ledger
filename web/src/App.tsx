@@ -1,23 +1,18 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AppLayout } from './layouts/AppLayout'
-import { LenderDashboard } from './pages/LenderDashboard/LenderDashboard'
+import { NotFound } from './pages/NotFound/NotFound'
 import { Skeleton } from './components/Skeleton/Skeleton'
+import { ToastProvider } from './components/Toast/Toast'
 
+const WizardFlow = lazy(() => import('./pages/WizardFlow/WizardFlow'))
 const ParcelDetail = lazy(() => import('./pages/ParcelDetail/ParcelDetail'))
-const LienManagement = lazy(() => import('./pages/LienManagement/LienManagement'))
-const FarmerPortal = lazy(() => import('./pages/FarmerPortal/FarmerPortal'))
-const ConsentDashboard = lazy(() => import('./pages/ConsentDashboard/ConsentDashboard'))
 
 function PageFallback() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-        <Skeleton width="280px" height="38px" />
-        <Skeleton width="200px" height="20px" />
-      </div>
+      <Skeleton width="280px" height="38px" />
       <Skeleton width="100%" height="160px" />
-      <Skeleton width="100%" height="120px" />
     </div>
   )
 }
@@ -26,15 +21,17 @@ const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
-      { index: true, element: <LenderDashboard /> },
+      { index: true, element: <Suspense fallback={<PageFallback />}><WizardFlow /></Suspense> },
       { path: 'parcel/:cadastral', element: <Suspense fallback={<PageFallback />}><ParcelDetail /></Suspense> },
-      { path: 'liens', element: <Suspense fallback={<PageFallback />}><LienManagement /></Suspense> },
-      { path: 'farmer', element: <Suspense fallback={<PageFallback />}><FarmerPortal /></Suspense> },
-      { path: 'farmer/consent', element: <Suspense fallback={<PageFallback />}><ConsentDashboard /></Suspense> },
+      { path: '*', element: <NotFound /> },
     ],
   },
 ])
 
 export function App() {
-  return <RouterProvider router={router} />
+  return (
+    <ToastProvider>
+      <RouterProvider router={router} />
+    </ToastProvider>
+  )
 }
