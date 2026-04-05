@@ -15,19 +15,23 @@ import (
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/entity"
 )
 
+const defaultBaseURL = "https://api.anthropic.com"
+
 type ClaudeScorer struct {
-	apiKey string
-	model  string
-	client *http.Client
-	logger *zerolog.Logger
+	apiKey  string
+	model   string
+	baseURL string
+	client  *http.Client
+	logger  *zerolog.Logger
 }
 
 func NewClaudeScorer(apiKey, model string, logger *zerolog.Logger) *ClaudeScorer {
 	return &ClaudeScorer{
-		apiKey: apiKey,
-		model:  model,
-		client: &http.Client{Timeout: 30 * time.Second},
-		logger: logger,
+		apiKey:  apiKey,
+		model:   model,
+		baseURL: defaultBaseURL,
+		client:  &http.Client{Timeout: 30 * time.Second},
+		logger:  logger,
 	}
 }
 
@@ -58,7 +62,7 @@ func (s *ClaudeScorer) callAPI(ctx context.Context, input *entity.ScoringInput) 
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		"https://api.anthropic.com/v1/messages", bytes.NewReader(reqBody))
+		s.baseURL+"/v1/messages", bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("claude scorer request: %w", err)
 	}

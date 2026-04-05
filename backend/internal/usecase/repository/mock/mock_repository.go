@@ -396,6 +396,21 @@ func (mr *MockSolanaClientMockRecorder) GetAccountInfo(ctx, address any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountInfo", reflect.TypeOf((*MockSolanaClient)(nil).GetAccountInfo), ctx, address)
 }
 
+// GetRecentBlockhash mocks base method.
+func (m *MockSolanaClient) GetRecentBlockhash(ctx context.Context) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRecentBlockhash", ctx)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRecentBlockhash indicates an expected call of GetRecentBlockhash.
+func (mr *MockSolanaClientMockRecorder) GetRecentBlockhash(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentBlockhash", reflect.TypeOf((*MockSolanaClient)(nil).GetRecentBlockhash), ctx)
+}
+
 // GetSignaturesForAddress mocks base method.
 func (m *MockSolanaClient) GetSignaturesForAddress(ctx context.Context, address string, limit int) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -465,18 +480,18 @@ func (m *MockNDVIProvider) EXPECT() *MockNDVIProviderMockRecorder {
 }
 
 // FetchNDVI mocks base method.
-func (m *MockNDVIProvider) FetchNDVI(ctx context.Context, lat, lon float64, startDate, endDate string) (float64, error) {
+func (m *MockNDVIProvider) FetchNDVI(ctx context.Context, cadastral string, lat, lon float64, startDate, endDate string) (float64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchNDVI", ctx, lat, lon, startDate, endDate)
+	ret := m.ctrl.Call(m, "FetchNDVI", ctx, cadastral, lat, lon, startDate, endDate)
 	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FetchNDVI indicates an expected call of FetchNDVI.
-func (mr *MockNDVIProviderMockRecorder) FetchNDVI(ctx, lat, lon, startDate, endDate any) *gomock.Call {
+func (mr *MockNDVIProviderMockRecorder) FetchNDVI(ctx, cadastral, lat, lon, startDate, endDate any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNDVI", reflect.TypeOf((*MockNDVIProvider)(nil).FetchNDVI), ctx, lat, lon, startDate, endDate)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNDVI", reflect.TypeOf((*MockNDVIProvider)(nil).FetchNDVI), ctx, cadastral, lat, lon, startDate, endDate)
 }
 
 // MockEGISSOracle is a mock of EGISSOracle interface.

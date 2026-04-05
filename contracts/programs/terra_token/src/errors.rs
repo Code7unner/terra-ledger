@@ -14,4 +14,8 @@ pub enum TerraTokenError {
     InvalidLandClass,
     #[msg("Area must be greater than zero")]
     InvalidArea,
+    #[msg("Owner does not match parcel owner")]
+    OwnerMismatch,
+    #[msg("Failed to calculate mint account space")]
+    MintSpaceCalculation,
 }

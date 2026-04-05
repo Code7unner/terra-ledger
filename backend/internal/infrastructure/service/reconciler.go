@@ -11,6 +11,7 @@ import (
 
 type Reconciler struct {
 	solana         repository.SolanaClient
+	sigRepo        repository.SignatureRepo
 	terraTokenID   string
 	lienRegistryID string
 	interval       time.Duration
@@ -19,12 +20,14 @@ type Reconciler struct {
 
 func NewReconciler(
 	solana repository.SolanaClient,
+	sigRepo repository.SignatureRepo,
 	terraTokenID, lienRegistryID string,
 	interval time.Duration,
 	logger *zerolog.Logger,
 ) *Reconciler {
 	return &Reconciler{
 		solana:         solana,
+		sigRepo:        sigRepo,
 		terraTokenID:   terraTokenID,
 		lienRegistryID: lienRegistryID,
 		interval:       interval,
@@ -66,5 +69,28 @@ func (r *Reconciler) reconcileProgram(ctx context.Context, name, programID strin
 		Int("signatures", len(sigs)).
 		Msg("reconciler fetched signatures")
 
-	// TODO: Compare against known tx_signatures in PG, process missing ones
+	for _, sig := range sigs {
+		r.processSignature(ctx, sig, name, programID)
+	}
+}
+
+func (r *Reconciler) processSignature(ctx context.Context, sig, name, programID string) {
+	exists, err := r.sigRepo.SignatureExists(ctx, sig)
+	if err != nil {
+		r.logger.Error().Err(err).Str("sig", sig).Msg("check signature failed")
+		return
+	}
+
+	if exists {
+		return
+	}
+
+	r.logger.Info().
+		Str("sig", sig).
+		Str("program", name).
+		Msg("detected unprocessed signature")
+
+	if err := r.sigRepo.RecordSignature(ctx, sig, programID); err != nil {
+		r.logger.Error().Err(err).Str("sig", sig).Msg("record signature failed")
+	}
 }

@@ -19,4 +19,5 @@ pub struct CertificateMinted {
 pub struct ParcelDormant {
     pub cadastral_number: String,
     pub seasons_dormant: u8,
+    pub has_active_lien: bool,
 }

@@ -5,10 +5,17 @@
 }
 
 .title {
+  font-family: var(--font-heading);
   font-size: var(--font-h1);
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.2;
+}
+
+.title::before {
+  content: '// ';
+  color: var(--color-text-muted);
+  font-weight: inherit;
 }
 
 .subtitle {

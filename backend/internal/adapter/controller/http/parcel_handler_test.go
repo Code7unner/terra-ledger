@@ -3,24 +3,29 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/entity"
-	mock "github.com/code7unner/decentrathon5/terra-ledger/backend/internal/usecase/repository/mock"
+	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/usecase/repository/mock"
 )
 
 type ParcelHandlerSuite struct {
 	suite.Suite
 	ctrl       *gomock.Controller
 	parcelRepo *mock.MockParcelRepo
+	solana     *mock.MockSolanaClient
 	handler    *ParcelHandler
+
+	cadastral string
 }
 
 func TestParcelHandlerSuite(t *testing.T) {
@@ -30,149 +35,144 @@ func TestParcelHandlerSuite(t *testing.T) {
 func (s *ParcelHandlerSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.parcelRepo = mock.NewMockParcelRepo(s.ctrl)
-	s.handler = NewParcelHandler(s.parcelRepo, nil, nil)
+	s.solana = mock.NewMockSolanaClient(s.ctrl)
+
+	logger := zerolog.Nop()
+	s.handler = NewParcelHandler(s.parcelRepo, s.solana, &logger)
+	s.cadastral = fmt.Sprintf("KZ-%s-%03d", gofakeit.LetterN(4), gofakeit.IntRange(1, 999))
 }
 
-func (s *ParcelHandlerSuite) TearDownTest() {
-	s.ctrl.Finish()
+func (s *ParcelHandlerSuite) validParcelInput() entity.RegisterParcelInput {
+	return entity.RegisterParcelInput{
+		CadastralNumber: s.cadastral,
+		OwnerWallet:     gofakeit.HexUint(64),
+		AreaHa:          gofakeit.Float64Range(100, 10000),
+		LandClass:       gofakeit.IntRange(1, 5),
+		Oblast:          gofakeit.State(),
+		Rayon:           gofakeit.City(),
+		HolderName:      gofakeit.Name(),
+		HolderIINHash:   gofakeit.HexUint(64),
+	}
 }
 
-func (s *ParcelHandlerSuite) setupApp() *fiber.App {
-	app := fiber.New()
-	app.Post("/parcels", s.handler.Register)
-	app.Get("/parcels/:cadastral", s.handler.Get)
-	return app
+type parcelRegisterCase struct {
+	name           string
+	buildBody      func(s *ParcelHandlerSuite) []byte
+	setupMock      func(s *ParcelHandlerSuite)
+	expectedStatus int
 }
 
-func (s *ParcelHandlerSuite) TestParcelHandler_Register() {
-	cadastral := gofakeit.LetterN(12)
-
-	tests := []struct {
-		name           string
-		body           func() []byte
-		mockSetup      func()
-		expectedStatus int
-	}{
+func parcelRegisterCases() []parcelRegisterCase {
+	return []parcelRegisterCase{
 		{
-			name: "register success",
-			body: func() []byte {
-				input := entity.RegisterParcelInput{
-					CadastralNumber: cadastral,
-					OwnerWallet:     gofakeit.HexUint(64),
-					AreaHa:          gofakeit.Float64Range(100, 10000),
-					LandClass:       gofakeit.IntRange(1, 5),
-					Oblast:          gofakeit.State(),
-					Rayon:           gofakeit.City(),
-					HolderName:      gofakeit.Name(),
-					HolderIINHash:   gofakeit.HexUint(64),
-				}
-				b, _ := json.Marshal(input)
+			name: "success",
+			buildBody: func(s *ParcelHandlerSuite) []byte {
+				b, _ := json.Marshal(s.validParcelInput())
 				return b
 			},
-			mockSetup: func() {
+			setupMock: func(s *ParcelHandlerSuite) {
 				s.parcelRepo.EXPECT().
-					Create(gomock.Any(), matchCadastral(cadastral)).
+					Create(gomock.Any(), matchCadastral(s.cadastral)).
 					Return(nil).
 					Times(1)
 			},
 			expectedStatus: http.StatusCreated,
 		},
 		{
-			name: "register duplicate",
-			body: func() []byte {
-				input := entity.RegisterParcelInput{
-					CadastralNumber: cadastral,
-					OwnerWallet:     gofakeit.HexUint(64),
-					AreaHa:          gofakeit.Float64Range(100, 10000),
-					LandClass:       gofakeit.IntRange(1, 5),
-					Oblast:          gofakeit.State(),
-					Rayon:           gofakeit.City(),
-					HolderName:      gofakeit.Name(),
-					HolderIINHash:   gofakeit.HexUint(64),
-				}
-				b, _ := json.Marshal(input)
+			name: "duplicate",
+			buildBody: func(s *ParcelHandlerSuite) []byte {
+				b, _ := json.Marshal(s.validParcelInput())
 				return b
 			},
-			mockSetup: func() {
+			setupMock: func(s *ParcelHandlerSuite) {
 				s.parcelRepo.EXPECT().
-					Create(gomock.Any(), matchCadastral(cadastral)).
+					Create(gomock.Any(), matchCadastral(s.cadastral)).
 					Return(entity.ErrAlreadyExists).
 					Times(1)
 			},
 			expectedStatus: http.StatusConflict,
 		},
 		{
-			name: "register bad body",
-			body: func() []byte {
-				return []byte(`{invalid-json`)
-			},
-			mockSetup:      func() {},
+			name:           "invalid_json",
+			buildBody:      func(_ *ParcelHandlerSuite) []byte { return []byte("not-json") },
+			setupMock:      func(_ *ParcelHandlerSuite) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 	}
+}
 
-	for _, tc := range tests {
+func (s *ParcelHandlerSuite) TestRegister() {
+	for _, tc := range parcelRegisterCases() {
 		s.Run(tc.name, func() {
 			s.SetupTest()
-			tc.mockSetup()
+			tc.setupMock(s)
 
-			app := s.setupApp()
-			req := httptest.NewRequest(http.MethodPost, "/parcels", bytes.NewReader(tc.body()))
+			app := fiber.New()
+			app.Post("/parcels", s.handler.Register)
+
+			body := tc.buildBody(s)
+			req := httptest.NewRequest(http.MethodPost, "/parcels", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			resp, err := app.Test(req)
-
 			s.Require().NoError(err)
 			s.Equal(tc.expectedStatus, resp.StatusCode)
 		})
 	}
 }
 
-func (s *ParcelHandlerSuite) TestParcelHandler_Get() {
-	cadastral := gofakeit.LetterN(12)
+type parcelGetCase struct {
+	name           string
+	setupMock      func(s *ParcelHandlerSuite)
+	expectedStatus int
+}
 
-	tests := []struct {
-		name           string
-		cadastral      string
-		mockSetup      func()
-		expectedStatus int
-	}{
+func parcelGetCases() []parcelGetCase {
+	return []parcelGetCase{
 		{
-			name:      "get success",
-			cadastral: cadastral,
-			mockSetup: func() {
+			name: "found",
+			setupMock: func(s *ParcelHandlerSuite) {
 				s.parcelRepo.EXPECT().
-					GetByCadastral(gomock.Any(), cadastral).
-					Return(stubParcel(cadastral), nil).
+					GetByCadastral(gomock.Any(), s.cadastral).
+					Return(stubParcel(s.cadastral), nil).
 					Times(1)
 			},
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:      "get not found",
-			cadastral: cadastral,
-			mockSetup: func() {
+			name: "not_found",
+			setupMock: func(s *ParcelHandlerSuite) {
 				s.parcelRepo.EXPECT().
-					GetByCadastral(gomock.Any(), cadastral).
+					GetByCadastral(gomock.Any(), s.cadastral).
 					Return(nil, entity.ErrNotFound).
 					Times(1)
 			},
 			expectedStatus: http.StatusNotFound,
 		},
 	}
+}
 
-	for _, tc := range tests {
+func (s *ParcelHandlerSuite) TestGet() {
+	for _, tc := range parcelGetCases() {
 		s.Run(tc.name, func() {
 			s.SetupTest()
-			tc.mockSetup()
+			tc.setupMock(s)
 
-			app := s.setupApp()
-			req := httptest.NewRequest(http.MethodGet, "/parcels/"+tc.cadastral, nil)
+			app := fiber.New()
+			app.Get("/parcels/:cadastral", s.handler.Get)
+
+			req := httptest.NewRequest(http.MethodGet,
+				fmt.Sprintf("/parcels/%s", s.cadastral), nil)
 
 			resp, err := app.Test(req)
-
 			s.Require().NoError(err)
 			s.Equal(tc.expectedStatus, resp.StatusCode)
+
+			if tc.expectedStatus == http.StatusOK {
+				var result entity.Parcel
+				s.Require().NoError(json.NewDecoder(resp.Body).Decode(&result))
+				s.Equal(s.cadastral, result.CadastralNumber)
+			}
 		})
 	}
 }

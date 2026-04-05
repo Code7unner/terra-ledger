@@ -4,8 +4,10 @@
   justify-content: center;
   gap: var(--spacing-sm);
   border-radius: var(--radius-md);
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   transition: background var(--transition), border-color var(--transition), opacity var(--transition);
   white-space: nowrap;
   cursor: pointer;
@@ -13,39 +15,41 @@
 }
 
 .button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 /* Variants */
 
 .primary {
-  background: var(--color-primary);
-  color: #ffffff;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 .primary:hover:not(:disabled) {
   background: var(--color-primary-hover);
+  color: var(--color-background);
 }
 
 .secondary {
-  background: transparent;
+  background: var(--color-surface-hover);
   border-color: var(--color-border);
   color: var(--color-text);
 }
 
 .secondary:hover:not(:disabled) {
-  background: var(--color-surface-hover);
-  border-color: var(--color-text-secondary);
+  background: var(--color-border);
+  border-color: var(--color-border-hover);
 }
 
 .danger {
-  background: var(--color-danger);
-  color: #ffffff;
+  background: var(--color-danger-ring);
+  color: var(--color-danger);
 }
 
 .danger:hover:not(:disabled) {
   background: var(--color-danger-hover);
+  color: var(--color-text);
 }
 
 /* Sizes */
@@ -53,7 +57,7 @@
 .sm {
   height: 36px;
   padding: 0 var(--spacing-md);
-  font-size: var(--font-body-sm);
+  font-size: var(--font-caption);
 }
 
 .md {

@@ -1,0 +1,26 @@
+[package]
+name = "transfer-hook"
+version = "0.1.0"
+description = "TerraLedger transfer hook guard for Token-2022 certificates"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "transfer_hook"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+anchor-debug = []
+custom-heap = []
+custom-panic = []
+
+[dependencies]
+anchor-lang = "1.0.0"
+anchor-spl = { version = "1.0.0", features = ["token_2022"] }
+terra-token = { path = "../terra_token", features = ["cpi"] }
+spl-transfer-hook-interface = "2.0"

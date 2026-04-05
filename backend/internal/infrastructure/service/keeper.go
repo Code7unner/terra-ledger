@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
+	"fmt"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
@@ -89,16 +90,99 @@ func (k *Keeper) processParcel(ctx context.Context, p entity.Parcel) error {
 		Int("tx_bytes", len(txData)).
 		Msg("keeper: built seasonal_check instruction data")
 
-	// TODO: Build full transaction with relay keypair, send via SolanaRPC
-	// For now, log the intent. Full tx building requires:
-	// 1. Get recent blockhash
-	// 2. Build transaction message with instruction
-	// 3. Sign with relay keypair
-	// 4. Serialize and send
-	_ = ctx
+	txBytes, err := k.buildTransaction(ctx, p.CadastralNumber, txData)
+	if err != nil {
+		return fmt.Errorf("build transaction: %w", err)
+	}
+
+	sig, err := k.solana.SendTransaction(ctx, txBytes)
+	if err != nil {
+		return fmt.Errorf("send transaction: %w", err)
+	}
+
+	k.logger.Info().
+		Str("cadastral", p.CadastralNumber).
+		Str("signature", sig).
+		Msg("keeper: seasonal_check transaction sent")
 
 	return nil
 }
+
+func (k *Keeper) buildTransaction(
+	ctx context.Context,
+	cadastral string,
+	ixData []byte,
+) ([]byte, error) {
+	blockhash, err := k.solana.GetRecentBlockhash(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get recent blockhash: %w", err)
+	}
+
+	programID := solana.MustPublicKeyFromBase58(k.terraTokenProgram)
+	parcelPDA := deriveParcelPDA(programID, cadastral)
+	relayPub := k.relayKey.PublicKey()
+
+	ix := buildSeasonalCheckInstruction(programID, parcelPDA, relayPub, ixData)
+
+	bh := solana.MustHashFromBase58(blockhash)
+	tx, err := solana.NewTransaction(
+		[]solana.Instruction{ix},
+		bh,
+		solana.TransactionPayer(relayPub),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create transaction: %w", err)
+	}
+
+	if _, err := tx.Sign(func(key solana.PublicKey) *solana.PrivateKey {
+		if key.Equals(relayPub) {
+			return &k.relayKey
+		}
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("sign transaction: %w", err)
+	}
+
+	raw, err := tx.MarshalBinary()
+	if err != nil {
+		return nil, fmt.Errorf("serialize transaction: %w", err)
+	}
+
+	return raw, nil
+}
+
+func deriveParcelPDA(programID solana.PublicKey, cadastral string) solana.PublicKey {
+	addr, _, _ := solana.FindProgramAddress(
+		[][]byte{[]byte("parcel"), []byte(cadastral)},
+		programID,
+	)
+	return addr
+}
+
+func buildSeasonalCheckInstruction(
+	programID, parcelPDA, authority solana.PublicKey,
+	data []byte,
+) *seasonalCheckIx {
+	return &seasonalCheckIx{
+		programID: programID,
+		accounts: solana.AccountMetaSlice{
+			solana.NewAccountMeta(parcelPDA, true, false),
+			solana.NewAccountMeta(authority, true, true),
+		},
+		data: data,
+	}
+}
+
+// seasonalCheckIx implements solana.Instruction for the seasonal_check call.
+type seasonalCheckIx struct {
+	programID solana.PublicKey
+	accounts  solana.AccountMetaSlice
+	data      []byte
+}
+
+func (ix *seasonalCheckIx) ProgramID() solana.PublicKey     { return ix.programID }
+func (ix *seasonalCheckIx) Accounts() []*solana.AccountMeta { return ix.accounts }
+func (ix *seasonalCheckIx) Data() ([]byte, error)           { return ix.data, nil }
 
 // buildSeasonalCheckData builds the Anchor instruction data for seasonal_check.
 // Format: 8-byte discriminator + borsh-encoded cadastral string

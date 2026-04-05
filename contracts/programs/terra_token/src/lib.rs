@@ -43,8 +43,9 @@ pub mod terra_token {
         cadastral_number: String,
         season: String,
         ndvi_score: u16,
+        crop_type: String,
     ) -> Result<()> {
-        instructions::mint_certificate::handler(ctx, cadastral_number, season, ndvi_score)
+        instructions::mint_certificate::handler(ctx, cadastral_number, season, ndvi_score, crop_type)
     }
 
     pub fn seasonal_check(

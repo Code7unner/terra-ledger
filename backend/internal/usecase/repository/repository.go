@@ -37,15 +37,21 @@ type CreditScoreRepo interface {
 	GetByCadastral(ctx context.Context, cadastral string) (*entity.CreditScore, error)
 }
 
+type SignatureRepo interface {
+	SignatureExists(ctx context.Context, signature string) (bool, error)
+	RecordSignature(ctx context.Context, signature, programID string) error
+}
+
 type SolanaClient interface {
 	GetAccountInfo(ctx context.Context, address string) ([]byte, error)
+	GetRecentBlockhash(ctx context.Context) (string, error)
 	SendTransaction(ctx context.Context, txBytes []byte) (string, error)
 	SimulateTransaction(ctx context.Context, txBytes []byte) error
 	GetSignaturesForAddress(ctx context.Context, address string, limit int) ([]string, error)
 }
 
 type NDVIProvider interface {
-	FetchNDVI(ctx context.Context, lat, lon float64, startDate, endDate string) (float64, error)
+	FetchNDVI(ctx context.Context, cadastral string, lat, lon float64, startDate, endDate string) (float64, error)
 }
 
 type EGISSOracle interface {

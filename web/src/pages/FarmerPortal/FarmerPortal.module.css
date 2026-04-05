@@ -5,9 +5,16 @@
 }
 
 .title {
+  font-family: var(--font-heading);
   font-size: var(--font-h1);
   font-weight: 700;
   color: var(--color-text);
+}
+
+.title::before {
+  content: '// ';
+  color: var(--color-text-muted);
+  font-weight: inherit;
 }
 
 .subtitle {
@@ -17,6 +24,7 @@
 }
 
 .sectionTitle {
+  font-family: var(--font-heading);
   font-size: var(--font-h3);
   font-weight: 600;
   color: var(--color-text);

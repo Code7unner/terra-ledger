@@ -36,6 +36,9 @@ pub struct RegisterEncumbrance<'info> {
     pub lender: Signer<'info>,
 
     pub system_program: Program<'info, System>,
+
+    /// The terra_token program for CPI verification
+    pub terra_token_program: Program<'info, terra_token::program::TerraToken>,
 }
 
 pub fn handler(
@@ -45,6 +48,16 @@ pub fn handler(
     notary_sig_hash: [u8; 32],
     notary_cert_hash: [u8; 32],
 ) -> Result<()> {
+    // CPI: verify parcel exists and PDA seeds match
+    let cpi_accounts = terra_token::cpi::accounts::VerifyParcel {
+        parcel_config: ctx.accounts.parcel_config.to_account_info(),
+    };
+    let cpi_ctx = CpiContext::new(
+        terra_token::ID,
+        cpi_accounts,
+    );
+    terra_token::cpi::verify_parcel(cpi_ctx, cadastral_number.clone())?;
+
     // Deserialize parcel config from terra_token program
     let parcel_data = ctx.accounts.parcel_config.try_borrow_data()?;
     let parcel = ParcelConfig::try_deserialize(&mut &parcel_data[..])?;
