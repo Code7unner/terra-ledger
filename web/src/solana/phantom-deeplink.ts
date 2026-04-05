@@ -2,15 +2,17 @@ import nacl from 'tweetnacl'
 import { getBase58Encoder, getBase58Decoder } from '@solana/kit'
 
 const STORAGE_KEY = 'phantom_dapp_keypair'
-const b58Encoder = getBase58Encoder()
-const b58Decoder = getBase58Decoder()
+
+// @solana/kit codec: encoder = string→bytes, decoder = bytes→string
+const b58ToBytes = getBase58Encoder()
+const bytesToB58 = getBase58Decoder()
 
 function b58encode(bytes: Uint8Array): string {
-  return b58Encoder.encode(bytes)
+  return bytesToB58.decode(bytes)
 }
 
 function b58decode(str: string): Uint8Array {
-  return b58Decoder.decode(str)
+  return new Uint8Array(b58ToBytes.encode(str))
 }
 
 export interface DappKeyPair {
