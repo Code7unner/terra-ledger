@@ -5,6 +5,10 @@ on:
     branches: [master]
   workflow_dispatch:
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: cr.yandex
   REGISTRY_ID: crplju5glnlve3hv3m3m
@@ -40,8 +44,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 20
+          cache: npm
           cache-dependency-path: web/package-lock.json
 
       - name: Install dependencies
@@ -52,15 +56,15 @@ jobs:
         working-directory: web
         run: npm run build
         env:
-          VITE_API_URL: ""
-          VITE_SOLANA_RPC_URL: https://devnet.helius-rpc.com/?api-key=${{ secrets.HELIUS_API_KEY }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_SOLANA_RPC_URL: ${{ secrets.VITE_SOLANA_RPC_URL }}
 
-      - name: Upload frontend artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-dist
+          name: frontend-build
           path: web/dist
-          retention-days: 1
+          retention-days: 3
 
   deploy:
     needs: [build-and-push, build-frontend]
@@ -71,11 +75,11 @@ jobs:
       - name: Download frontend artifact
         uses: actions/download-artifact@v4
         with:
-          name: frontend-dist
-          path: frontend-dist
+          name: frontend-build
+          path: frontend-build
 
       - name: Copy docker-compose to VPS
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
@@ -84,14 +88,14 @@ jobs:
           target: ~/terraledger/
           strip_components: 1
 
-      - name: Copy frontend to VPS
-        uses: appleboy/scp-action@v0.1.7
+      - name: Upload frontend to VPS
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "frontend-dist/*"
-          target: /var/www/terraledger
+          source: "frontend-build/*"
+          target: /tmp/terraledger-frontend
           strip_components: 1
           overwrite: true
 
@@ -104,9 +108,15 @@ jobs:
           envs: REGISTRY,REGISTRY_ID,IMAGE_NAME,GITHUB_SHA
           script: |
             echo '${{ secrets.YC_SA_JSON_KEY }}' | docker login --username json_key --password-stdin ${REGISTRY}
+
             cd ~/terraledger
             IMAGE=${REGISTRY}/${REGISTRY_ID}/${IMAGE_NAME}:${GITHUB_SHA} docker compose -f docker-compose.prod.yml pull backend
             IMAGE=${REGISTRY}/${REGISTRY_ID}/${IMAGE_NAME}:${GITHUB_SHA} docker compose -f docker-compose.prod.yml up -d --force-recreate
+
+            sudo mkdir -p /var/www/terraledger
+            sudo cp -r /tmp/terraledger-frontend/* /var/www/terraledger/
+            rm -rf /tmp/terraledger-frontend
+
             sudo cp nginx.conf /etc/nginx/sites-available/terra-ledger
             sudo ln -sf /etc/nginx/sites-available/terra-ledger /etc/nginx/sites-enabled/terra-ledger
             sudo rm -f /etc/nginx/sites-enabled/default
