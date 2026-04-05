@@ -14,6 +14,7 @@ import (
 
 	handler "github.com/code7unner/decentrathon5/terra-ledger/backend/internal/adapter/controller/http"
 	repo "github.com/code7unner/decentrathon5/terra-ledger/backend/internal/adapter/repository"
+	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/adapter/repository/geocoder"
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/infrastructure/config"
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/infrastructure/migration"
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/infrastructure/service"
@@ -68,8 +69,14 @@ func Start() {
 	// Consent
 	consentRepo := repo.NewConsentPG(db, &logger)
 
+	// Geocoder
+	geo := geocoder.NewRepository()
+	if err := geo.Init(); err != nil {
+		logger.Fatal().Err(err).Msg("failed to init geocoder")
+	}
+
 	// Handlers
-	parcelHandler := handler.NewParcelHandler(parcelRepo, solanaRPC, copernicusClient, &logger)
+	parcelHandler := handler.NewParcelHandler(parcelRepo, solanaRPC, copernicusClient, geo, &logger)
 	certHandler := handler.NewCertificateHandler(certRepo, parcelRepo)
 	lienHandler := handler.NewLienHandler(lienRepo, parcelRepo, solanaRPC, &logger)
 	creditHandler := handler.NewCreditHandler(parcelRepo, certRepo, lienRepo, scoreRepo, consentRepo, claudeScorer)

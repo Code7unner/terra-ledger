@@ -8,19 +8,25 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/entity"
-	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/usecase/ndvi"
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/usecase/repository"
 )
 
 type ParcelHandler struct {
-	repo   repository.ParcelRepo
-	solana repository.SolanaClient
-	ndvi   repository.NDVIProvider
-	logger *zerolog.Logger
+	repo     repository.ParcelRepo
+	solana   repository.SolanaClient
+	ndvi     repository.NDVIProvider
+	geocoder repository.Geocoder
+	logger   *zerolog.Logger
 }
 
-func NewParcelHandler(repo repository.ParcelRepo, solana repository.SolanaClient, ndvi repository.NDVIProvider, logger *zerolog.Logger) *ParcelHandler {
-	return &ParcelHandler{repo: repo, solana: solana, ndvi: ndvi, logger: logger}
+func NewParcelHandler(
+	repo repository.ParcelRepo,
+	solana repository.SolanaClient,
+	ndvi repository.NDVIProvider,
+	geocoder repository.Geocoder,
+	logger *zerolog.Logger,
+) *ParcelHandler {
+	return &ParcelHandler{repo: repo, solana: solana, ndvi: ndvi, geocoder: geocoder, logger: logger}
 }
 
 func (h *ParcelHandler) Register(c *fiber.Ctx) error {
@@ -38,7 +44,7 @@ func (h *ParcelHandler) Register(c *fiber.Ctx) error {
 		Rayon:           input.Rayon,
 		HolderName:      input.HolderName,
 		HolderIINHash:   input.HolderIINHash,
-		KYCVerified:     true, // Mock KYC
+		KYCVerified:     true,
 	}
 
 	if err := h.repo.Create(c.Context(), parcel); err != nil {
@@ -62,7 +68,6 @@ func (h *ParcelHandler) Get(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch parcel"})
 	}
 
-	// Enrich with on-chain data if available
 	h.enrichParcelFromChain(c, parcel)
 
 	return c.JSON(parcel)
@@ -90,7 +95,7 @@ func (h *ParcelHandler) enrichParcelFromChain(c *fiber.Ctx, parcel *entity.Parce
 func (h *ParcelHandler) GetNDVI(c *fiber.Ctx) error {
 	cadastral := c.Params("cadastral")
 
-	_, err := h.repo.GetByCadastral(c.Context(), cadastral)
+	parcel, err := h.repo.GetByCadastral(c.Context(), cadastral)
 	if err != nil {
 		if errors.Is(err, entity.ErrNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "parcel not found"})
@@ -102,7 +107,7 @@ func (h *ParcelHandler) GetNDVI(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"cadastral": cadastral, "ndvi": 0.72, "source": "default"})
 	}
 
-	lat, lon := ndvi.CentroidFor(cadastral)
+	lat, lon := h.geocoder.Resolve(cadastral, parcel.Oblast)
 	now := time.Now()
 	startDate := now.AddDate(0, -1, 0).Format("2006-01-02")
 	endDate := now.Format("2006-01-02")

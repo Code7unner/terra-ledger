@@ -1,0 +1,23 @@
+[
+  {"code":"01","name":"Akmola","lat":51.13,"lon":69.41},
+  {"code":"03","name":"Aktobe","lat":50.30,"lon":57.21},
+  {"code":"05","name":"Almaty","lat":43.35,"lon":77.04},
+  {"code":"07","name":"Atyrau","lat":47.10,"lon":51.88},
+  {"code":"09","name":"East Kazakhstan","lat":49.95,"lon":82.61},
+  {"code":"11","name":"Zhambyl","lat":42.90,"lon":71.38},
+  {"code":"13","name":"West Kazakhstan","lat":51.23,"lon":51.37},
+  {"code":"15","name":"Karaganda","lat":49.80,"lon":73.10},
+  {"code":"17","name":"Kostanay","lat":53.21,"lon":63.63},
+  {"code":"19","name":"Kyzylorda","lat":44.85,"lon":65.52},
+  {"code":"21","name":"Mangystau","lat":43.35,"lon":52.06},
+  {"code":"23","name":"Pavlodar","lat":52.29,"lon":76.95},
+  {"code":"27","name":"North Kazakhstan","lat":54.87,"lon":69.15},
+  {"code":"31","name":"Turkestan","lat":43.30,"lon":68.25},
+  {"code":"33","name":"South Kazakhstan","lat":42.32,"lon":69.60},
+  {"code":"35","name":"Astana","lat":51.13,"lon":71.43},
+  {"code":"39","name":"Almaty city","lat":43.24,"lon":76.95},
+  {"code":"43","name":"Shymkent","lat":42.32,"lon":69.60},
+  {"code":"55","name":"Abay","lat":49.17,"lon":78.38},
+  {"code":"57","name":"Zhetysu","lat":44.85,"lon":79.00},
+  {"code":"59","name":"Ulytau","lat":48.00,"lon":67.80}
+]
