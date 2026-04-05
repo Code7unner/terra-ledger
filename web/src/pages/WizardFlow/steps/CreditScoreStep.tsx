@@ -30,8 +30,6 @@ export function CreditScoreStep({ cadastral, onNext }: Props) {
 
     const timer = setTimeout(() => {
       setRetryCount(r => r + 1)
-      fetchedForRef.current = ''
-      fetchProfile(cadastral)
     }, RETRY_DELAY)
 
     return () => clearTimeout(timer)
@@ -60,7 +58,7 @@ export function CreditScoreStep({ cadastral, onNext }: Props) {
       <div className={styles.stepCenter}>
         <h2 className={styles.stepTitle}>Credit Score</h2>
         <p className={styles.error}>Failed to compute credit score: {error}</p>
-        <Button variant="secondary" onClick={() => { fetchedForRef.current = ''; setRetryCount(0); fetchProfile(cadastral) }}>
+        <Button variant="secondary" onClick={() => { setRetryCount(0) }}>
           Retry
         </Button>
         <Button onClick={onNext}>Skip</Button>
