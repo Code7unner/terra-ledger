@@ -75,19 +75,23 @@ export function usePhantomDeeplink() {
           stopPolling()
 
           if (resp.status === 'connected' && resp.phantom_encryption_public_key && resp.nonce && resp.data) {
-            // 4. Decrypt the response
-            const result = decryptConnectResponse(
-              resp.phantom_encryption_public_key,
-              resp.nonce,
-              resp.data,
-              dappKeyPair,
-            )
-            setWalletAddress(result.public_key)
-            setStatus('connected')
-
-            // Store for session persistence
-            localStorage.setItem('phantom_deeplink_wallet', result.public_key)
-            localStorage.setItem('phantom_deeplink_session', result.session)
+            try {
+              const result = decryptConnectResponse(
+                resp.phantom_encryption_public_key,
+                resp.nonce,
+                resp.data,
+                dappKeyPair,
+              )
+              console.log('[phantom-deeplink] decrypted wallet:', result.public_key)
+              setWalletAddress(result.public_key)
+              setStatus('connected')
+              localStorage.setItem('phantom_deeplink_wallet', result.public_key)
+              localStorage.setItem('phantom_deeplink_session', result.session)
+            } catch (decryptErr) {
+              console.error('[phantom-deeplink] decrypt failed:', decryptErr)
+              setError('Failed to decrypt wallet response')
+              setStatus('error')
+            }
           } else if (resp.status === 'error') {
             setError(resp.error_message || 'Connection denied')
             setStatus('error')
