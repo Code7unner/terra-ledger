@@ -45,9 +45,11 @@ const LAND_CLASS_OPTIONS = [
 ]
 
 export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack }: Props) {
-  const { signAndSend, connected, walletAddress, txStatus } = useSignAndSend()
+  const { signAndSend, connected, walletAddress: extensionWallet, txStatus } = useSignAndSend()
   const { registerParcel } = useParcel()
   const { toast } = useToast()
+
+  const walletAddress = extensionWallet ? String(extensionWallet) : data.walletAddress
 
   const [cadastral, setCadastral] = useState(data.cadastral)
   const [areaHa, setAreaHa] = useState(data.area_ha || 0)
@@ -97,7 +99,7 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack }: P
 
       await registerParcel({
         cadastral_number: cadastral,
-        owner_wallet: walletAddress ? String(walletAddress) : 'demo-wallet',
+        owner_wallet: walletAddress || 'demo-wallet',
         area_ha: areaHa,
         land_class: landClass,
         oblast,

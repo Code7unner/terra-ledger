@@ -1,30 +1,40 @@
 import { useEffect, useRef } from 'react'
+import type { WizardData } from '../WizardFlow'
 import { useSignAndSend } from '../../../solana/transaction'
 import { usePhantomDeeplink } from '../../../solana/usePhantomDeeplink'
 import { Button } from '../../../components/Button/Button'
 import styles from '../WizardFlow.module.css'
 
 interface Props {
+  onUpdate: (partial: Partial<WizardData>) => void
   onNext: () => void
 }
 
 const QR_API = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=141414&color=ededed&data='
 
-export function WalletSetupStep({ onNext }: Props) {
-  const { connected } = useSignAndSend()
-  const { connectViaQR, qrUrl, status, walletAddress, error } = usePhantomDeeplink()
+export function WalletSetupStep({ onUpdate, onNext }: Props) {
+  const { connected, walletAddress: extensionWallet } = useSignAndSend()
+  const { connectViaQR, qrUrl, status, walletAddress: deeplinkWallet, error } = usePhantomDeeplink()
   const hasExtension = typeof window !== 'undefined' && 'solana' in window
   const advancedRef = useRef(false)
 
-  // Auto-advance when wallet connects (via extension or deeplink)
   useEffect(() => {
-    if ((connected || status === 'connected') && !advancedRef.current) {
+    if (advancedRef.current) return
+
+    if (connected && extensionWallet) {
       advancedRef.current = true
+      onUpdate({ walletAddress: String(extensionWallet) })
+      onNext()
+      return
+    }
+
+    if (status === 'connected' && deeplinkWallet) {
+      advancedRef.current = true
+      onUpdate({ walletAddress: deeplinkWallet })
       onNext()
     }
-  }, [connected, status, onNext])
+  }, [connected, extensionWallet, status, deeplinkWallet, onUpdate, onNext])
 
-  // Auto-start QR flow if no extension
   useEffect(() => {
     if (!hasExtension && status === 'idle') {
       connectViaQR()
@@ -68,12 +78,10 @@ export function WalletSetupStep({ onNext }: Props) {
             </>
           )}
 
-          {status === 'connected' && walletAddress && (
-            <div>
-              <p className={styles.mintConfirm}>
-                Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}
-              </p>
-            </div>
+          {status === 'connected' && deeplinkWallet && (
+            <p className={styles.mintConfirm}>
+              Connected: {deeplinkWallet.slice(0, 8)}...{deeplinkWallet.slice(-4)}
+            </p>
           )}
 
           {status === 'error' && (
