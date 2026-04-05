@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Address } from '@solana/kit'
 import { useSignAndSend } from '../../../solana/transaction'
+import { usePhantomDeeplink } from '../../../solana/usePhantomDeeplink'
 import { buildRegisterEncumbranceInstruction, getParcelPda } from '../../../solana/program'
 import { useLien } from '../../../hooks/useLien'
 import { useToast } from '../../../components/Toast/useToast'
@@ -14,8 +15,11 @@ interface Props {
   onDone: () => void
 }
 
+const QR_API = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=141414&color=ededed&data='
+
 export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
-  const { signAndSend, connected, walletAddress, txStatus } = useSignAndSend()
+  const { signAndSend, connected: extensionConnected, walletAddress: extensionWallet, txStatus } = useSignAndSend()
+  const { connectViaQR, qrUrl, status: deeplinkStatus, walletAddress: deeplinkWallet } = usePhantomDeeplink()
   const { registerLien } = useLien()
   const { toast } = useToast()
 
@@ -25,16 +29,72 @@ export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  if (!connected) {
+  const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('phantom_deeplink_wallet') : null
+  const walletAddress = extensionWallet ? String(extensionWallet) : (deeplinkWallet || storedWallet)
+  const hasWallet = extensionConnected || !!walletAddress
+  const hasExtension = typeof window !== 'undefined' && 'solana' in window
+
+  useEffect(() => {
+    if (!hasWallet && !hasExtension && deeplinkStatus === 'idle') {
+      connectViaQR()
+    }
+  }, [hasWallet, hasExtension, deeplinkStatus, connectViaQR])
+
+  if (!hasWallet) {
     return (
       <div className={styles.stepCenter}>
         <h2 className={styles.stepTitle}>Register Lien</h2>
-        <p className={styles.stepDesc}>
-          Connect your wallet to register a lien on this parcel.
-        </p>
-        <p className={styles.stepHint}>
-          Click <strong>Connect Wallet</strong> in the top right corner to continue.
-        </p>
+        <p className={styles.stepDesc}>Connect your wallet to register a lien on this parcel.</p>
+
+        {hasExtension ? (
+          <p className={styles.stepHint}>
+            Click <strong>Connect Wallet</strong> in the top right corner to continue.
+          </p>
+        ) : (
+          <div className={styles.walletHelp}>
+            {deeplinkStatus === 'waiting' && qrUrl && (
+              <>
+                <div className={styles.qrPlaceholder}>
+                  <img
+                    src={`${QR_API}${encodeURIComponent(qrUrl)}`}
+                    alt="Connect with Phantom"
+                    width={250}
+                    height={250}
+                  />
+                </div>
+                <p className={styles.stepHint}>
+                  Open <strong>Phantom</strong> on your phone and scan this QR code
+                </p>
+                <div className={styles.loadingAnim}>
+                  <div className={styles.spinner} />
+                  <p className={styles.loadingMsg}>Waiting for approval...</p>
+                </div>
+              </>
+            )}
+
+            {deeplinkStatus === 'connected' && deeplinkWallet && (
+              <p className={styles.mintConfirm}>
+                Connected: {deeplinkWallet.slice(0, 8)}...{deeplinkWallet.slice(-4)}
+              </p>
+            )}
+
+            {deeplinkStatus === 'error' && (
+              <div>
+                <p className={styles.error}>Connection failed</p>
+                <Button variant="secondary" onClick={connectViaQR}>Try Again</Button>
+              </div>
+            )}
+
+            {deeplinkStatus === 'idle' && (
+              <div className={styles.walletHelp}>
+                <div className={styles.spinner} />
+                <p className={styles.stepHint}>Preparing connection...</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        <Button variant="secondary" onClick={onBack}>Back</Button>
       </div>
     )
   }
@@ -73,29 +133,31 @@ export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
     setSubmitting(true)
 
     try {
-      const [parcelPda] = await getParcelPda(cadastral)
-      const notarySigHash = new Uint8Array(32)
-      const notaryCertHash = new Uint8Array(32)
+      if (extensionConnected && extensionWallet) {
+        const [parcelPda] = await getParcelPda(cadastral)
+        const notarySigHash = new Uint8Array(32)
+        const notaryCertHash = new Uint8Array(32)
 
-      if (notaryHash) {
-        const encoder = new TextEncoder()
-        const hashBytes = encoder.encode(notaryHash)
-        notaryCertHash.set(hashBytes.slice(0, 32))
+        if (notaryHash) {
+          const encoder = new TextEncoder()
+          const hashBytes = encoder.encode(notaryHash)
+          notaryCertHash.set(hashBytes.slice(0, 32))
+        }
+
+        const ix = await buildRegisterEncumbranceInstruction(
+          extensionWallet as Address,
+          parcelPda,
+          cadastral,
+          BigInt(amountNum),
+          notarySigHash,
+          notaryCertHash,
+        )
+        await signAndSend([ix])
       }
-
-      const ix = await buildRegisterEncumbranceInstruction(
-        walletAddress as Address,
-        parcelPda,
-        cadastral,
-        BigInt(amountNum),
-        notarySigHash,
-        notaryCertHash,
-      )
-      await signAndSend([ix])
 
       await registerLien({
         cadastral_number: cadastral,
-        lender_wallet: String(walletAddress),
+        lender_wallet: walletAddress || '',
         amount_tenge: amountNum,
         notary_cert_hash: notaryHash,
       })
@@ -137,9 +199,7 @@ export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
         {error && <p className={styles.error}>{error}</p>}
 
         <div className={styles.stepActions}>
-          <Button variant="secondary" onClick={onBack}>
-            Back
-          </Button>
+          <Button variant="secondary" onClick={onBack}>Back</Button>
           <Button
             loading={submitting || txStatus === 'signing' || txStatus === 'confirming'}
             onClick={handleSubmit}

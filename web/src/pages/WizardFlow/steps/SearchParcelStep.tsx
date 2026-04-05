@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { WizardData } from '../WizardFlow'
+import { get } from '../../../api/client'
+import { useToast } from '../../../components/Toast/useToast'
 import { Input } from '../../../components/Input/Input'
 import { Button } from '../../../components/Button/Button'
 import styles from '../WizardFlow.module.css'
@@ -14,23 +16,30 @@ const DEMO_PARCELS = ['KZ11-0032-001', 'KZ11-0032-002', 'KZ11-0032-003']
 
 export function SearchParcelStep({ onUpdate, onNext }: Props) {
   const [query, setQuery] = useState('')
+  const [searching, setSearching] = useState(false)
+  const { toast } = useToast()
+
+  const search = async (cadastral: string) => {
+    setSearching(true)
+    try {
+      await get(`/api/v1/parcels/${encodeURIComponent(cadastral)}`)
+      onUpdate({ cadastral })
+      onNext()
+    } catch {
+      toast(`Parcel ${cadastral} not found`)
+    } finally {
+      setSearching(false)
+    }
+  }
 
   const handleSearch = () => {
     const trimmed = query.trim()
     if (!trimmed) return
-    onUpdate({ cadastral: trimmed })
-    onNext()
-  }
-
-  const handleChipClick = (cadastral: string) => {
-    onUpdate({ cadastral })
-    onNext()
+    search(trimmed)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch()
-    }
+    if (e.key === 'Enter') handleSearch()
   }
 
   return (
@@ -48,7 +57,7 @@ export function SearchParcelStep({ onUpdate, onNext }: Props) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
         />
-        <Button onClick={handleSearch} disabled={!query.trim()}>
+        <Button onClick={handleSearch} disabled={!query.trim() || searching} loading={searching}>
           Search
         </Button>
       </div>
@@ -60,7 +69,8 @@ export function SearchParcelStep({ onUpdate, onNext }: Props) {
             <button
               key={id}
               className={styles.chip}
-              onClick={() => handleChipClick(id)}
+              onClick={() => search(id)}
+              disabled={searching}
             >
               {id}
             </button>

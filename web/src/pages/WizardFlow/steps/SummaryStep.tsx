@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCreditProfile } from '../../../hooks/useCreditProfile'
 import { useLien } from '../../../hooks/useLien'
+import { useToast } from '../../../components/Toast/useToast'
 import { CreditGauge } from '../../../components/CreditGauge/CreditGauge'
 import { NDVIChart } from '../../../components/NDVIChart/NDVIChart'
 import { Badge } from '../../../components/Badge/Badge'
@@ -15,8 +16,9 @@ interface Props {
 }
 
 export function SummaryStep({ cadastral, onRestart, showLienButton, onRegisterLien }: Props) {
-  const { data, loading, fetchProfile } = useCreditProfile()
+  const { data, loading, error, fetchProfile } = useCreditProfile()
   const { liens, fetchLiens } = useLien()
+  const { toast } = useToast()
   const [copied, setCopied] = useState(false)
   const fetchedForRef = useRef('')
 
@@ -38,7 +40,11 @@ export function SummaryStep({ cadastral, onRestart, showLienButton, onRegisterLi
     }
   }
 
-  if (loading || !data) {
+  useEffect(() => {
+    if (error) toast(error)
+  }, [error, toast])
+
+  if (loading || (!data && !error)) {
     return (
       <div className={styles.stepCenter}>
         <h2 className={styles.stepTitle}>Summary</h2>
@@ -49,6 +55,8 @@ export function SummaryStep({ cadastral, onRestart, showLienButton, onRegisterLi
       </div>
     )
   }
+
+  if (!data) return null
 
   const ci = data.credit_intelligence
   const parcel = data.parcel
