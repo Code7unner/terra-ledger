@@ -82,13 +82,12 @@ export function usePhantomDeeplink() {
                 resp.data,
                 dappKeyPair,
               )
-              console.log('[phantom-deeplink] decrypted wallet:', result.public_key)
               setWalletAddress(result.public_key)
               setStatus('connected')
               localStorage.setItem('phantom_deeplink_wallet', result.public_key)
               localStorage.setItem('phantom_deeplink_session', result.session)
             } catch (decryptErr) {
-              console.error('[phantom-deeplink] decrypt failed:', decryptErr)
+              void decryptErr
               setError('Failed to decrypt wallet response')
               setStatus('error')
             }

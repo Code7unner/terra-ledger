@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useCreditProfile } from '../../../hooks/useCreditProfile'
 import { CreditGauge } from '../../../components/CreditGauge/CreditGauge'
 import { Button } from '../../../components/Button/Button'
@@ -16,14 +16,11 @@ const RETRY_DELAY = 2000
 export function CreditScoreStep({ cadastral, onNext }: Props) {
   const { data, loading, error, fetchProfile } = useCreditProfile()
   const [retryCount, setRetryCount] = useState(0)
-  const fetchedForRef = useRef('')
 
   useEffect(() => {
-    if (!cadastral || fetchedForRef.current === cadastral) return
-    fetchedForRef.current = cadastral
-    setRetryCount(0)
+    if (!cadastral) return
     fetchProfile(cadastral)
-  }, [cadastral, fetchProfile])
+  }, [cadastral, fetchProfile, retryCount])
 
   // Retry if no credit_intelligence in response
   useEffect(() => {

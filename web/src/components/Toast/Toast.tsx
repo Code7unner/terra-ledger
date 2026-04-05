@@ -1,4 +1,5 @@
-import { createContext, useContext, useCallback, useState, type ReactNode } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
+import { ToastContext } from './useToast'
 import styles from './Toast.module.css'
 
 type ToastType = 'error' | 'success' | 'info'
@@ -7,16 +8,6 @@ interface Toast {
   id: number
   message: string
   type: ToastType
-}
-
-interface ToastContextValue {
-  toast: (message: string, type?: ToastType) => void
-}
-
-const ToastContext = createContext<ToastContextValue>({ toast: () => {} })
-
-export function useToast() {
-  return useContext(ToastContext)
 }
 
 let nextId = 0

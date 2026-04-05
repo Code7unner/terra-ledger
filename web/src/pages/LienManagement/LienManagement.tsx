@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { type Address, address } from '@solana/kit'
 import { Card } from '../../components/Card/Card'
 import { Button } from '../../components/Button/Button'
@@ -53,7 +53,7 @@ export default function LienManagement() {
   // --- Register form state ---
   const [cadastral, setCadastral] = useState('')
   const [amount, setAmount] = useState('')
-  const [wallet, setWallet] = useState('')
+  const [wallet, setWallet] = useState(() => walletAddress || '')
   const [notaryHash, setNotaryHash] = useState('')
   const [registerStatus, setRegisterStatus] = useState<RestTxStatus>('idle')
 
@@ -63,13 +63,6 @@ export default function LienManagement() {
 
   // --- Search state ---
   const [searchCadastral, setSearchCadastral] = useState('')
-
-  // Auto-fill lender wallet from connected wallet
-  useEffect(() => {
-    if (walletConnected && walletAddress && !wallet) {
-      setWallet(walletAddress)
-    }
-  }, [walletConnected, walletAddress, wallet])
 
   async function handleRegister() {
     if (!cadastral || !amount || !wallet) return

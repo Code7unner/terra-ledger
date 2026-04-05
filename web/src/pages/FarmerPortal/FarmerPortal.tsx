@@ -56,7 +56,7 @@ export default function FarmerPortal() {
 
   const [form, setForm] = useState<RegisterParcelInput>({
     cadastral_number: '',
-    owner_wallet: '',
+    owner_wallet: walletAddress ? String(walletAddress) : '',
     area_ha: 0,
     land_class: 1,
     oblast: '',
@@ -67,13 +67,6 @@ export default function FarmerPortal() {
 
   const [certificates, setCertificates] = useState<Certificate[]>([])
   const [certsLoading, setCertsLoading] = useState(false)
-
-  // Auto-fill owner_wallet when wallet connects
-  useEffect(() => {
-    if (connected && walletAddress && !form.owner_wallet) {
-      setForm((prev) => ({ ...prev, owner_wallet: String(walletAddress) }))
-    }
-  }, [connected, walletAddress, form.owner_wallet])
 
   function update(field: keyof RegisterParcelInput, value: string | number) {
     setForm((prev) => ({ ...prev, [field]: value }))

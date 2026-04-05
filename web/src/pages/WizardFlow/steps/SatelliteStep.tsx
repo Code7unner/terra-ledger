@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import type { WizardData } from '../WizardFlow'
 import { get } from '../../../api/client'
-import { useToast } from '../../../components/Toast/Toast'
+import { useToast } from '../../../components/Toast/useToast'
 import { Button } from '../../../components/Button/Button'
 import styles from '../WizardFlow.module.css'
 
@@ -87,7 +87,7 @@ export function SatelliteStep({ cadastral, isDemo, onUpdate, onNext }: Props) {
     return () => {
       clearInterval(msgTimer)
     }
-  }, [cadastral, isDemo, onUpdate])
+  }, [cadastral, isDemo, onUpdate, toast])
 
   if (loading) {
     return (

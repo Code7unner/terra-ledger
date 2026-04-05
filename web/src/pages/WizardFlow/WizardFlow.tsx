@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useReducer, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Stepper } from '../../components/Stepper/Stepper'
 import { LandingStep } from './steps/LandingStep'
@@ -28,6 +28,20 @@ export interface WizardData {
 const FARMER_STEPS = ['Wallet', 'Parcel', 'NDVI', 'Score', 'Profile']
 const LENDER_STEPS = ['Search', 'Profile', 'Lien']
 
+interface State {
+  path: WizardPath
+  step: number
+  data: WizardData
+}
+
+type Action =
+  | { type: 'SELECT_PATH'; path: WizardPath }
+  | { type: 'NEXT' }
+  | { type: 'BACK' }
+  | { type: 'UPDATE_DATA'; partial: Partial<WizardData> }
+  | { type: 'UPDATE_AND_NEXT'; partial: Partial<WizardData> }
+  | { type: 'RESTART' }
+
 const initialData: WizardData = {
   cadastral: '',
   area_ha: 0,
@@ -40,34 +54,41 @@ const initialData: WizardData = {
   lienRegistered: false,
 }
 
+const initialState: State = {
+  path: 'none',
+  step: 0,
+  data: initialData,
+}
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'SELECT_PATH':
+      return { ...state, path: action.path, step: 0 }
+    case 'NEXT':
+      return { ...state, step: state.step + 1 }
+    case 'BACK':
+      return { ...state, step: Math.max(0, state.step - 1) }
+    case 'UPDATE_DATA':
+      return { ...state, data: { ...state.data, ...action.partial } }
+    case 'UPDATE_AND_NEXT':
+      return { ...state, data: { ...state.data, ...action.partial }, step: state.step + 1 }
+    case 'RESTART':
+      return initialState
+  }
+}
+
 export default function WizardFlow() {
   const [searchParams] = useSearchParams()
   const isDemo = searchParams.get('demo') === 'true'
 
-  const [path, setPath] = useState<WizardPath>('none')
-  const [step, setStep] = useState(0)
-  const [data, setData] = useState<WizardData>(initialData)
-  const dataRef = useRef<WizardData>(initialData)
+  const [state, dispatch] = useReducer(reducer, initialState)
+  const { path, step, data } = state
 
-  const next = useCallback(() => setStep(s => s + 1), [])
-  const back = useCallback(() => setStep(s => Math.max(0, s - 1)), [])
-  const updateData = useCallback((partial: Partial<WizardData>) => {
-    // Update ref immediately (synchronous) so downstream renders see it
-    dataRef.current = { ...dataRef.current, ...partial }
-    setData(prev => ({ ...prev, ...partial }))
-  }, [])
-
-  const selectPath = useCallback((p: WizardPath) => {
-    setPath(p)
-    setStep(0)
-  }, [])
-
-  const restart = useCallback(() => {
-    setPath('none')
-    setStep(0)
-    setData(initialData)
-    dataRef.current = initialData
-  }, [])
+  const next = useCallback(() => dispatch({ type: 'NEXT' }), [])
+  const back = useCallback(() => dispatch({ type: 'BACK' }), [])
+  const updateData = useCallback((partial: Partial<WizardData>) => dispatch({ type: 'UPDATE_DATA', partial }), [])
+  const selectPath = useCallback((p: WizardPath) => dispatch({ type: 'SELECT_PATH', path: p }), [])
+  const restart = useCallback(() => dispatch({ type: 'RESTART' }), [])
 
   if (path === 'none') {
     return (
@@ -78,8 +99,7 @@ export default function WizardFlow() {
   }
 
   const steps = path === 'farmer' ? FARMER_STEPS : LENDER_STEPS
-
-  const getCadastral = () => dataRef.current.cadastral
+  const cad = data.cadastral
 
   return (
     <div className={styles.wizard}>
@@ -89,15 +109,15 @@ export default function WizardFlow() {
           <>
             {step === 0 && <WalletSetupStep onUpdate={updateData} onNext={next} />}
             {step === 1 && <RegisterParcelStep data={data} isDemo={isDemo} onUpdate={updateData} onNext={next} onBack={back} />}
-            {step === 2 && <SatelliteStep cadastral={getCadastral()} isDemo={isDemo} onUpdate={updateData} onNext={next} />}
-            {step === 3 && <CreditScoreStep cadastral={getCadastral()} isDemo={isDemo} onNext={next} />}
-            {step === 4 && <SummaryStep cadastral={getCadastral()} onRestart={restart} />}
+            {step === 2 && <SatelliteStep cadastral={cad} isDemo={isDemo} onUpdate={updateData} onNext={next} />}
+            {step === 3 && <CreditScoreStep cadastral={cad} isDemo={isDemo} onNext={next} />}
+            {step === 4 && <SummaryStep cadastral={cad} onRestart={restart} />}
           </>
         ) : (
           <>
             {step === 0 && <SearchParcelStep isDemo={isDemo} onUpdate={updateData} onNext={next} />}
-            {step === 1 && <SummaryStep cadastral={getCadastral()} onRestart={restart} showLienButton onRegisterLien={next} />}
-            {step === 2 && <RegisterLienStep cadastral={getCadastral()} onBack={back} onDone={restart} />}
+            {step === 1 && <SummaryStep cadastral={cad} onRestart={restart} showLienButton onRegisterLien={next} />}
+            {step === 2 && <RegisterLienStep cadastral={cad} onBack={back} onDone={restart} />}
           </>
         )}
       </div>
