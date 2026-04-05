@@ -107,11 +107,25 @@
 
 .placeholder {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-sm);
   min-height: 120px;
+  text-align: center;
+}
+
+.placeholderTitle {
   font-size: var(--font-body);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.placeholderHint {
+  font-size: var(--font-body-sm);
   color: var(--color-text-secondary);
+  max-width: 400px;
+  line-height: 1.5;
 }
 
 .errorState {

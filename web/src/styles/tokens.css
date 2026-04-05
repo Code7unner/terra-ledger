@@ -18,6 +18,8 @@
   --color-danger-hover: #b91c1c;
   --color-success-alpha: rgba(22, 163, 74, 0.1);
   --color-warning-alpha: rgba(217, 119, 6, 0.1);
+  --color-warning-bg: #fff8e1;
+  --color-warning-border: #ffe082;
   --color-muted-alpha: rgba(100, 116, 139, 0.1);
 
   /* Shadows */
