@@ -54,6 +54,10 @@ type NDVIProvider interface {
 	FetchNDVI(ctx context.Context, cadastral string, lat, lon float64, startDate, endDate string) (float64, error)
 }
 
+type Geocoder interface {
+	Resolve(cadastral string, oblast string) (lat float64, lon float64)
+}
+
 type EGISSOracle interface {
 	GetParcelSnapshot(ctx context.Context, cadastral string) (map[string]any, error)
 }

@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
@@ -11,13 +12,21 @@ import (
 )
 
 type ParcelHandler struct {
-	repo   repository.ParcelRepo
-	solana repository.SolanaClient
-	logger *zerolog.Logger
+	repo     repository.ParcelRepo
+	solana   repository.SolanaClient
+	ndvi     repository.NDVIProvider
+	geocoder repository.Geocoder
+	logger   *zerolog.Logger
 }
 
-func NewParcelHandler(repo repository.ParcelRepo, solana repository.SolanaClient, logger *zerolog.Logger) *ParcelHandler {
-	return &ParcelHandler{repo: repo, solana: solana, logger: logger}
+func NewParcelHandler(
+	repo repository.ParcelRepo,
+	solana repository.SolanaClient,
+	ndvi repository.NDVIProvider,
+	geocoder repository.Geocoder,
+	logger *zerolog.Logger,
+) *ParcelHandler {
+	return &ParcelHandler{repo: repo, solana: solana, ndvi: ndvi, geocoder: geocoder, logger: logger}
 }
 
 func (h *ParcelHandler) Register(c *fiber.Ctx) error {
@@ -35,7 +44,7 @@ func (h *ParcelHandler) Register(c *fiber.Ctx) error {
 		Rayon:           input.Rayon,
 		HolderName:      input.HolderName,
 		HolderIINHash:   input.HolderIINHash,
-		KYCVerified:     true, // Mock KYC
+		KYCVerified:     true,
 	}
 
 	if err := h.repo.Create(c.Context(), parcel); err != nil {
@@ -59,7 +68,6 @@ func (h *ParcelHandler) Get(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch parcel"})
 	}
 
-	// Enrich with on-chain data if available
 	h.enrichParcelFromChain(c, parcel)
 
 	return c.JSON(parcel)
@@ -82,4 +90,40 @@ func (h *ParcelHandler) enrichParcelFromChain(c *fiber.Ctx, parcel *entity.Parce
 			Int("bytes", len(data)).
 			Msg("fetched on-chain parcel data")
 	}
+}
+
+func (h *ParcelHandler) GetNDVI(c *fiber.Ctx) error {
+	cadastral := c.Params("cadastral")
+
+	parcel, err := h.repo.GetByCadastral(c.Context(), cadastral)
+	if err != nil {
+		if errors.Is(err, entity.ErrNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "parcel not found"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch parcel"})
+	}
+
+	if h.ndvi == nil {
+		return c.JSON(fiber.Map{"cadastral": cadastral, "ndvi": 0.72, "source": "default"})
+	}
+
+	lat, lon := h.geocoder.Resolve(cadastral, parcel.Oblast)
+	now := time.Now()
+	startDate := now.AddDate(0, -1, 0).Format("2006-01-02")
+	endDate := now.Format("2006-01-02")
+
+	score, err := h.ndvi.FetchNDVI(c.Context(), cadastral, lat, lon, startDate, endDate)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "ndvi fetch failed"})
+	}
+
+	return c.JSON(fiber.Map{
+		"cadastral":  cadastral,
+		"ndvi":       score,
+		"lat":        lat,
+		"lon":        lon,
+		"start_date": startDate,
+		"end_date":   endDate,
+		"source":     "copernicus",
+	})
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -131,7 +132,8 @@ func (s *ClaudeScorer) parseResponse(body io.Reader, input *entity.ScoringInput)
 		Explanation    string   `json:"explanation"`
 		RiskFactors    []string `json:"risk_factors"`
 	}
-	if err := json.Unmarshal([]byte(apiResp.Content[0].Text), &parsed); err != nil {
+	text := extractJSON(apiResp.Content[0].Text)
+	if err := json.Unmarshal([]byte(text), &parsed); err != nil {
 		return nil, fmt.Errorf("claude scorer parse score JSON: %w", err)
 	}
 
@@ -184,6 +186,16 @@ func (s *ClaudeScorer) fallbackScore(input *entity.ScoringInput) *entity.CreditS
 		RiskFactors:         buildRiskFactors(input),
 		ComputedAt:          time.Now(),
 	}
+}
+
+// extractJSON strips markdown code fences that Claude sometimes wraps around JSON.
+func extractJSON(s string) string {
+	start := strings.Index(s, "{")
+	end := strings.LastIndex(s, "}")
+	if start >= 0 && end > start {
+		return s[start : end+1]
+	}
+	return s
 }
 
 func avgNDVI(input *entity.ScoringInput) float64 {

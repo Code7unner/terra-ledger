@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Stepper } from '../../components/Stepper/Stepper'
 import { LandingStep } from './steps/LandingStep'
@@ -45,10 +45,13 @@ export default function WizardFlow() {
   const [path, setPath] = useState<WizardPath>('none')
   const [step, setStep] = useState(0)
   const [data, setData] = useState<WizardData>(initialData)
+  const dataRef = useRef<WizardData>(initialData)
 
   const next = useCallback(() => setStep(s => s + 1), [])
   const back = useCallback(() => setStep(s => Math.max(0, s - 1)), [])
   const updateData = useCallback((partial: Partial<WizardData>) => {
+    // Update ref immediately (synchronous) so downstream renders see it
+    dataRef.current = { ...dataRef.current, ...partial }
     setData(prev => ({ ...prev, ...partial }))
   }, [])
 
@@ -61,6 +64,7 @@ export default function WizardFlow() {
     setPath('none')
     setStep(0)
     setData(initialData)
+    dataRef.current = initialData
   }, [])
 
   if (path === 'none') {
@@ -73,30 +77,27 @@ export default function WizardFlow() {
 
   const steps = path === 'farmer' ? FARMER_STEPS : LENDER_STEPS
 
-  const renderStep = () => {
-    if (path === 'farmer') {
-      switch (step) {
-        case 0: return <WalletSetupStep onNext={next} />
-        case 1: return <RegisterParcelStep data={data} isDemo={isDemo} onUpdate={updateData} onNext={next} onBack={back} />
-        case 2: return <SatelliteStep cadastral={data.cadastral} isDemo={isDemo} onUpdate={updateData} onNext={next} />
-        case 3: return <CreditScoreStep cadastral={data.cadastral} isDemo={isDemo} onNext={next} />
-        case 4: return <SummaryStep cadastral={data.cadastral} onRestart={restart} />
-        default: return null
-      }
-    }
-    switch (step) {
-      case 0: return <SearchParcelStep isDemo={isDemo} onUpdate={updateData} onNext={next} />
-      case 1: return <SummaryStep cadastral={data.cadastral} onRestart={restart} showLienButton onRegisterLien={next} />
-      case 2: return <RegisterLienStep cadastral={data.cadastral} onBack={back} onDone={restart} />
-      default: return null
-    }
-  }
+  const getCadastral = () => dataRef.current.cadastral
 
   return (
     <div className={styles.wizard}>
       <Stepper steps={steps} currentStep={step} />
-      <div className={styles.stepContent} key={`${path}-${step}`}>
-        {renderStep()}
+      <div className={styles.stepContent}>
+        {path === 'farmer' ? (
+          <>
+            {step === 0 && <WalletSetupStep onNext={next} />}
+            {step === 1 && <RegisterParcelStep data={data} isDemo={isDemo} onUpdate={updateData} onNext={next} onBack={back} />}
+            {step === 2 && <SatelliteStep cadastral={getCadastral()} isDemo={isDemo} onUpdate={updateData} onNext={next} />}
+            {step === 3 && <CreditScoreStep cadastral={getCadastral()} isDemo={isDemo} onNext={next} />}
+            {step === 4 && <SummaryStep cadastral={getCadastral()} onRestart={restart} />}
+          </>
+        ) : (
+          <>
+            {step === 0 && <SearchParcelStep isDemo={isDemo} onUpdate={updateData} onNext={next} />}
+            {step === 1 && <SummaryStep cadastral={getCadastral()} onRestart={restart} showLienButton onRegisterLien={next} />}
+            {step === 2 && <RegisterLienStep cadastral={getCadastral()} onBack={back} onDone={restart} />}
+          </>
+        )}
       </div>
     </div>
   )

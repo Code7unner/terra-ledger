@@ -18,11 +18,11 @@ export function SummaryStep({ cadastral, onRestart, showLienButton, onRegisterLi
   const { data, loading, fetchProfile } = useCreditProfile()
   const { liens, fetchLiens } = useLien()
   const [copied, setCopied] = useState(false)
-  const fetchedRef = useRef(false)
+  const fetchedForRef = useRef('')
 
   useEffect(() => {
-    if (fetchedRef.current) return
-    fetchedRef.current = true
+    if (!cadastral || fetchedForRef.current === cadastral) return
+    fetchedForRef.current = cadastral
     fetchProfile(cadastral)
     fetchLiens(cadastral)
   }, [cadastral, fetchProfile, fetchLiens])
@@ -54,7 +54,7 @@ export function SummaryStep({ cadastral, onRestart, showLienButton, onRegisterLi
   const parcel = data.parcel
   const certs = data.productivity?.certificates ?? []
   const activeLiens = data.encumbrances?.active_liens ?? []
-  const hasActiveLien = activeLiens.length > 0 || liens.some((l) => l.status === 'active')
+  const hasActiveLien = activeLiens.length > 0 || (liens ?? []).some((l) => l.status === 'active')
 
   return (
     <div className={styles.stepCenter}>

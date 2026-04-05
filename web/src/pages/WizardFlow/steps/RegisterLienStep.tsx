@@ -23,6 +23,7 @@ export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
   const [notaryHash, setNotaryHash] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   if (!connected) {
     return (
@@ -34,6 +35,29 @@ export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
         <p className={styles.stepHint}>
           Click <strong>Connect Wallet</strong> in the top right corner to continue.
         </p>
+      </div>
+    )
+  }
+
+  if (success) {
+    return (
+      <div className={styles.stepCenter}>
+        <h2 className={styles.stepTitle}>Lien Registered</h2>
+        <div className={styles.ndviResult}>
+          <div className={styles.ndviScore} style={{ color: 'var(--color-primary)', fontSize: '48px' }}>✓</div>
+          <div className={styles.ndviLabel}>On-Chain Encumbrance</div>
+          <div className={styles.ndviDesc}>
+            <strong>{Number(amount).toLocaleString()} KZT</strong> lien registered on parcel <strong>{cadastral}</strong>
+          </div>
+        </div>
+        <p className={styles.stepDesc}>
+          The encumbrance has been recorded on Solana and in the TerraLedger database.
+          This parcel is now marked as encumbered in credit reports.
+        </p>
+        <div className={styles.stepActions}>
+          <Button variant="secondary" onClick={onBack}>Back to Profile</Button>
+          <Button onClick={onDone}>Search Another Parcel</Button>
+        </div>
       </div>
     )
   }
@@ -76,7 +100,7 @@ export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
         notary_cert_hash: notaryHash,
       })
 
-      onDone()
+      setSuccess(true)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to register lien'
       setError(msg)
