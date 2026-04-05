@@ -29,13 +29,16 @@
 }
 
 .navLink {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 10px var(--spacing-md);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   font-size: var(--font-body-sm);
   font-weight: 500;
   color: var(--color-text-secondary);
   border-radius: var(--radius-md);
   text-decoration: none;
-  transition: all var(--transition);
+  transition: color var(--transition), background var(--transition);
 }
 
 .navLink:hover {

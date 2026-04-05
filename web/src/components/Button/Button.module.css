@@ -51,9 +51,9 @@
 /* Sizes */
 
 .sm {
-  height: 32px;
+  height: 36px;
   padding: 0 var(--spacing-md);
-  font-size: var(--font-caption);
+  font-size: var(--font-body-sm);
 }
 
 .md {
