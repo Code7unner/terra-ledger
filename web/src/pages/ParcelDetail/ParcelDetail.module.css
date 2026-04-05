@@ -124,6 +124,17 @@
   margin-bottom: var(--spacing-sm);
 }
 
+@media (max-width: 1024px) {
+  .metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .creditSection {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
 @media (max-width: 768px) {
   .metrics {
     grid-template-columns: 1fr;
@@ -131,10 +142,5 @@
 
   .details {
     grid-template-columns: 1fr;
-  }
-
-  .creditSection {
-    flex-direction: column;
-    align-items: center;
   }
 }

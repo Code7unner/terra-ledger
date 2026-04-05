@@ -64,10 +64,10 @@ export function WalletButton() {
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
       {wallet ? (
-        <button className={styles.connected} onClick={handleButtonClick}>
-          <span className={styles.dot} />
+        <button className={styles.connected} onClick={handleButtonClick} aria-expanded={menu === 'accountMenu'} aria-haspopup="true" aria-label={`Wallet ${formatAddress(wallet.account.address)}`}>
+          <span className={styles.dot} aria-hidden="true" />
           <span className={styles.address}>{formatAddress(wallet.account.address)}</span>
-          <span className={`${styles.chevron} ${menu === 'accountMenu' ? styles.chevronOpen : ''}`} />
+          <span className={`${styles.chevron} ${menu === 'accountMenu' ? styles.chevronOpen : ''}`} aria-hidden="true" />
         </button>
       ) : (
         <Button variant="primary" size="sm" loading={connecting} onClick={handleButtonClick}>
@@ -76,7 +76,7 @@ export function WalletButton() {
       )}
 
       {menu === 'selectWallet' && (
-        <div className={styles.dropdown}>
+        <div className={styles.dropdown} role="dialog" aria-label="Select wallet">
           <p className={styles.dropdownTitle}>Select Wallet</p>
 
           {connectors.length > 0 ? (
@@ -106,7 +106,7 @@ export function WalletButton() {
       )}
 
       {menu === 'accountMenu' && wallet && (
-        <div className={styles.dropdown}>
+        <div className={styles.dropdown} role="menu" aria-label="Wallet actions">
           <div className={styles.accountHeader}>
             <button className={styles.copyRow} onClick={handleCopy}>
               <span className={styles.accountAddress}>{formatAddress(wallet.account.address)}</span>

@@ -23,7 +23,7 @@ export function LenderDashboard() {
       <p className={styles.subtitle}>Search parcels and assess credit profiles</p>
 
       <Card padding="lg">
-        <form className={styles.searchForm} onSubmit={handleSearch}>
+        <form className={styles.searchForm} onSubmit={handleSearch} role="search" aria-label="Parcel search">
           <Input
             label="Cadastral Number"
             placeholder="Enter cadastral number..."

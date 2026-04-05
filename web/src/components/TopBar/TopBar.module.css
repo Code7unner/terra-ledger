@@ -55,6 +55,16 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 1024px) {
+  .topbar {
+    padding: 0 var(--spacing-lg);
+  }
+
+  .navLink {
+    padding: 10px var(--spacing-sm);
+  }
+}
+
 @media (max-width: 768px) {
   .topbar {
     padding: 0 var(--spacing-md);
@@ -62,7 +72,7 @@
   }
 
   .logo {
-    font-size: 16px;
+    font-size: var(--font-body);
   }
 
   .nav {
@@ -71,6 +81,7 @@
 
   .navLink {
     padding: var(--spacing-sm) var(--spacing-sm);
+    min-height: 40px;
     font-size: var(--font-caption);
   }
 }

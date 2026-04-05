@@ -5,6 +5,7 @@
 .claude/
 TASKS.md
 CLAUDE.md
+.gstack/
 
 # Environment
 .env
@@ -36,3 +37,4 @@ e2e/playwright-report/
 # OS
 .DS_Store
 *.swp
+.gstack/
