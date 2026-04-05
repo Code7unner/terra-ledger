@@ -12,6 +12,17 @@
   --color-text-secondary: #64748b;
   --color-border: #e2e8f0;
   --color-border-focus: #2563eb;
+  --color-primary-alpha: rgba(37, 99, 235, 0.08);
+  --color-primary-ring: rgba(37, 99, 235, 0.1);
+  --color-danger-ring: rgba(220, 38, 38, 0.1);
+  --color-danger-hover: #b91c1c;
+  --color-success-alpha: rgba(22, 163, 74, 0.1);
+  --color-warning-alpha: rgba(217, 119, 6, 0.1);
+  --color-muted-alpha: rgba(100, 116, 139, 0.1);
+
+  /* Shadows */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
 
   /* Spacing */
   --spacing-xs: 4px;

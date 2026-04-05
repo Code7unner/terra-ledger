@@ -23,7 +23,7 @@
 
 .field:focus-within {
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
 }
 
 .fieldError {
@@ -32,7 +32,7 @@
 
 .fieldError:focus-within {
   border-color: var(--color-danger);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 0 0 3px var(--color-danger-ring);
 }
 
 .input {
