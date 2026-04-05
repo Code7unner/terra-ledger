@@ -13,7 +13,7 @@ export function TopBar() {
   return (
     <header className={styles.topbar}>
       <NavLink to="/" className={styles.logo}>TerraLedger</NavLink>
-      <nav className={styles.nav}>
+      <nav className={styles.nav} aria-label="Main navigation">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
