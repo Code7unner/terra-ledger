@@ -12,7 +12,7 @@ interface Props {
 
 const DEMO_PARCELS = ['KZ11-0032-001', 'KZ11-0032-002', 'KZ11-0032-003']
 
-export function SearchParcelStep({ isDemo, onUpdate, onNext }: Props) {
+export function SearchParcelStep({ onUpdate, onNext }: Props) {
   const [query, setQuery] = useState('')
 
   const handleSearch = () => {
