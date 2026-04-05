@@ -15,7 +15,7 @@
 }
 
 .axisLabel {
-  font-size: 10px;
+  font-size: var(--font-caption);
   fill: var(--color-text-secondary);
 }
 
@@ -39,7 +39,7 @@
 }
 
 .seasonLabel {
-  font-size: 9px;
+  font-size: var(--font-caption);
   fill: var(--color-text-secondary);
 }
 

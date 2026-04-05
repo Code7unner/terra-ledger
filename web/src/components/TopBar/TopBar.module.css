@@ -13,7 +13,7 @@
 }
 
 .logo {
-  font-size: 18px;
+  font-size: var(--font-h3);
   font-weight: 700;
   color: var(--color-primary);
   flex-shrink: 0;
