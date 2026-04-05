@@ -15,6 +15,7 @@ CLAUDE.md
 contracts/target/
 contracts/node_modules/
 contracts/.anchor/
+contracts/test-ledger/
 
 # Backend
 backend/bin/
