@@ -24,6 +24,7 @@ type KeeperSuite struct {
 	suite.Suite
 	ctrl       *gomock.Controller
 	parcelRepo *mock.MockParcelRepo
+	scoreRepo  *mock.MockCreditScoreRepo
 	solana     *mock.MockSolanaClient
 }
 
@@ -34,6 +35,7 @@ func TestKeeperSuite(t *testing.T) {
 func (s *KeeperSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.parcelRepo = mock.NewMockParcelRepo(s.ctrl)
+	s.scoreRepo = mock.NewMockCreditScoreRepo(s.ctrl)
 	s.solana = mock.NewMockSolanaClient(s.ctrl)
 }
 
@@ -44,6 +46,7 @@ func (s *KeeperSuite) newKeeper() *Keeper {
 	return &Keeper{
 		solana:            s.solana,
 		parcels:           s.parcelRepo,
+		scoreRepo:         s.scoreRepo,
 		interval:          6 * time.Hour,
 		relayKey:          relayKey,
 		terraTokenProgram: testTerraTokenProgram,
@@ -92,6 +95,10 @@ func (s *KeeperSuite) TestProcessTick() {
 				s.solana.EXPECT().
 					SendTransaction(gomock.Any(), gomock.Any()).
 					Return(gofakeit.LetterN(88), nil).
+					Times(1)
+				s.scoreRepo.EXPECT().
+					GetByCadastral(gomock.Any(), gomock.Any()).
+					Return(nil, nil).
 					Times(1)
 			},
 		},
