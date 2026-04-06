@@ -1,4 +1,4 @@
-# TerraLedger
+# <img src="web/favicon.svg" width="32" height="32" alt="TerraLedger" /> TerraLedger
 
 **Two-layer Solana-based Agricultural Credit Intelligence for Kazakhstan.**
 
