@@ -34,11 +34,13 @@ func (r *ParcelPG) Create(ctx context.Context, p *entity.Parcel) error {
 	err = r.db.QueryRowContext(ctx, `
 		INSERT INTO parcels (
 			cadastral_number, owner_wallet, area_ha, land_class,
-			kyc_verified, oblast, rayon, holder_name, holder_iin_hash, egiss_snapshot
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+			kyc_verified, oblast, rayon, holder_name, holder_iin_hash, egiss_snapshot,
+			latitude, longitude
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
 		RETURNING id, registered_at, updated_at`,
 		p.CadastralNumber, p.OwnerWallet, p.AreaHa, p.LandClass,
 		p.KYCVerified, p.Oblast, p.Rayon, p.HolderName, p.HolderIINHash, snapshotJSON,
+		p.Latitude, p.Longitude,
 	).Scan(&p.ID, &p.RegisteredAt, &p.UpdatedAt)
 	if err != nil {
 		var pqErr *pq.Error

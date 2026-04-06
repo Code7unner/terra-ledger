@@ -68,6 +68,12 @@ func (h *ParcelHandler) Register(c *fiber.Ctx) error {
 		KYCVerified:     true,
 	}
 
+	lat, lon := h.geocoder.Resolve(input.CadastralNumber, input.Oblast)
+	if lat != 0 || lon != 0 {
+		parcel.Latitude = &lat
+		parcel.Longitude = &lon
+	}
+
 	if err := h.repo.Create(c.Context(), parcel); err != nil {
 		if errors.Is(err, entity.ErrAlreadyExists) {
 			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
