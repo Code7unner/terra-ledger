@@ -114,6 +114,7 @@
   line-height: 1.05;
   text-transform: uppercase;
   color: var(--color-text);
+  text-wrap: balance;
 }
 
 .headlineAccent {
@@ -124,7 +125,8 @@
   font-size: var(--font-body);
   color: var(--color-text-secondary);
   line-height: 1.6;
-  max-width: 560px;
+  max-width: 480px;
+  text-wrap: pretty;
 }
 
 .heroCtas {
