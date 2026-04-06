@@ -38,7 +38,7 @@ func (s *ParcelHandlerSuite) SetupTest() {
 	s.solana = mock.NewMockSolanaClient(s.ctrl)
 
 	logger := zerolog.Nop()
-	s.handler = NewParcelHandler(s.parcelRepo, s.solana, nil, nil, &logger)
+	s.handler = NewParcelHandler(s.parcelRepo, s.solana, nil, nil, nil, &logger)
 	s.cadastral = fmt.Sprintf("KZ-%s-%03d", gofakeit.LetterN(4), gofakeit.IntRange(1, 999))
 }
 

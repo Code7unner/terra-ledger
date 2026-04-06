@@ -1,0 +1,2 @@
+ALTER TABLE parcels DROP COLUMN IF EXISTS latitude;
+ALTER TABLE parcels DROP COLUMN IF EXISTS longitude;

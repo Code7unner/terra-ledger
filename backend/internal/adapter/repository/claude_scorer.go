@@ -91,17 +91,27 @@ func (s *ClaudeScorer) buildPrompt(input *entity.ScoringInput) string {
 		ndviScores[i] = c.NDVIScore
 	}
 
-	data, _ := json.Marshal(map[string]any{
-		"cadastral":       input.CadastralNumber,
-		"area_ha":         input.AreaHa,
-		"land_class":      input.LandClass,
-		"oblast":          input.Oblast,
-		"ndvi_scores":     ndviScores,
-		"active_liens":    input.ActiveLiens,
-		"total_liens":     input.TotalLiens,
-		"disputes":        input.Disputes,
-		"dormant_seasons": input.DormantSeasons,
-	})
+	promptData := map[string]any{
+		"cadastral":        input.CadastralNumber,
+		"area_ha":          input.AreaHa,
+		"land_class":       input.LandClass,
+		"oblast":           input.Oblast,
+		"ndvi_scores":      ndviScores,
+		"ndvi_trend":       input.NDVITrend,
+		"active_liens":     input.ActiveLiens,
+		"total_liens":      input.TotalLiens,
+		"disputes":         input.Disputes,
+		"dormant_seasons":  input.DormantSeasons,
+		"water_stress_risk": input.WaterStressRisk,
+	}
+	if input.AvgNDWI != nil {
+		promptData["avg_ndwi"] = *input.AvgNDWI
+	}
+	if input.AvgEVI != nil {
+		promptData["avg_evi"] = *input.AvgEVI
+	}
+
+	data, _ := json.Marshal(promptData)
 
 	return fmt.Sprintf(`Analyze this agricultural parcel and return a JSON credit score.
 Data: %s
@@ -137,6 +147,15 @@ func (s *ClaudeScorer) parseResponse(body io.Reader, input *entity.ScoringInput)
 		return nil, fmt.Errorf("claude scorer parse score JSON: %w", err)
 	}
 
+	// Clamp LLM output to valid ranges
+	parsed.AIScore = max(0, min(100, parsed.AIScore))
+	parsed.RecommendedLTV = max(0.0, min(1.0, parsed.RecommendedLTV))
+	switch parsed.Grade {
+	case "A", "B", "C", "D":
+	default:
+		parsed.Grade = "D"
+	}
+
 	return &entity.CreditScore{
 		ID:                  uuid.New(),
 		CadastralNumber:     input.CadastralNumber,
@@ -164,6 +183,21 @@ func (s *ClaudeScorer) fallbackScore(input *entity.ScoringInput) *entity.CreditS
 		score += 10
 	}
 	score -= input.DormantSeasons * 10
+
+	// Water stress penalty: NDWI < -0.3 indicates drought.
+	if input.AvgNDWI != nil && *input.AvgNDWI < -0.3 {
+		score -= 10
+	}
+	// EVI bonus: > 0.4 indicates strong canopy photosynthesis.
+	if input.AvgEVI != nil && *input.AvgEVI > 0.4 {
+		score += 5
+	}
+	// Trend bonus.
+	if input.NDVITrend == "improving" {
+		score += 5
+	} else if input.NDVITrend == "declining" {
+		score -= 5
+	}
 
 	if score < 0 {
 		score = 0
@@ -222,6 +256,12 @@ func buildRiskFactors(input *entity.ScoringInput) []string {
 	}
 	if input.Disputes > 0 {
 		factors = append(factors, "Land disputes present")
+	}
+	if input.WaterStressRisk {
+		factors = append(factors, "Water stress detected (low NDWI)")
+	}
+	if input.NDVITrend == "declining" {
+		factors = append(factors, "Declining NDVI trend")
 	}
 	return factors
 }

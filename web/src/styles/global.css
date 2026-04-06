@@ -82,6 +82,23 @@ img {
   background: var(--color-text-muted);
 }
 
+/* Leaflet dark overrides */
+.leaflet-container {
+  background: var(--color-background);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-md);
+}
+
+.leaflet-popup-close-button {
+  color: var(--color-text-secondary) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

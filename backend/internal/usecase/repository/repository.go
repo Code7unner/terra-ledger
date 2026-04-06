@@ -12,16 +12,20 @@ type ParcelRepo interface {
 	GetByCadastral(ctx context.Context, cadastral string) (*entity.Parcel, error)
 	UpdateOnChainAddress(ctx context.Context, cadastral, addr string) error
 	ListNeedingSeasonalCheck(ctx context.Context, maxAge time.Duration) ([]entity.Parcel, error)
+	ListAll(ctx context.Context) ([]entity.Parcel, error)
 }
 
 type CertificateRepo interface {
 	Create(ctx context.Context, cert *entity.NDVICertificate) error
+	CreateBatch(ctx context.Context, certs []entity.NDVICertificate) error
 	ListByParcel(ctx context.Context, cadastral string) ([]entity.NDVICertificate, error)
+	ListByParcelInRange(ctx context.Context, cadastral string, from, to time.Time) ([]entity.NDVICertificate, error)
 	GetLatest(ctx context.Context, cadastral string) (*entity.NDVICertificate, error)
 }
 
 type LienRepo interface {
 	Create(ctx context.Context, lien *entity.Encumbrance) error
+	GetByID(ctx context.Context, id string) (*entity.Encumbrance, error)
 	GetActive(ctx context.Context, cadastral string) (*entity.Encumbrance, error)
 	ListByParcel(ctx context.Context, cadastral string) ([]entity.Encumbrance, error)
 	UpdateStatus(ctx context.Context, id string, status entity.LienStatus) error
@@ -54,6 +58,11 @@ type NDVIProvider interface {
 	FetchNDVI(ctx context.Context, cadastral string, lat, lon float64, startDate, endDate string) (float64, error)
 }
 
+type SatelliteProvider interface {
+	NDVIProvider
+	FetchTimeSeries(ctx context.Context, cadastral string, lat, lon float64, startDate, endDate string) (*entity.SatelliteTimeSeries, error)
+}
+
 type Geocoder interface {
 	Resolve(cadastral string, oblast string) (lat float64, lon float64)
 }
@@ -72,4 +81,10 @@ type ConsentRepo interface {
 	GetByWallet(ctx context.Context, walletAddress string) (*entity.Consent, error)
 	LogAccess(ctx context.Context, entry *entity.ConsentLogEntry) error
 	ListAccessLog(ctx context.Context, walletAddress string) ([]entity.ConsentLogEntry, error)
+}
+
+type AgentDecisionRepo interface {
+	Create(ctx context.Context, d *entity.AgentDecision) error
+	ListRecent(ctx context.Context, limit int) ([]entity.AgentDecision, error)
+	ListByParcel(ctx context.Context, cadastral string, limit int) ([]entity.AgentDecision, error)
 }

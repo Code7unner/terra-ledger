@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/lib/pq"
+
 	"github.com/rs/zerolog"
 
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/entity"
@@ -31,10 +33,33 @@ func (r *LienPG) Create(ctx context.Context, lien *entity.Encumbrance) error {
 		lien.AmountTenge, lien.NotaryCertHash, lien.Status,
 	).Scan(&lien.ID, &lien.RegisteredAt)
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return entity.ErrDoublePledge
+		}
 		return fmt.Errorf("inserting lien: %w", err)
 	}
 
 	return nil
+}
+
+func (r *LienPG) GetByID(ctx context.Context, id string) (*entity.Encumbrance, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT id, parcel_id, cadastral_number, lender_wallet, lender_name,
+		       amount_tenge, notary_cert_hash, on_chain_address, tx_signature,
+		       status, registered_at, released_at
+		FROM liens
+		WHERE id = $1`, id)
+
+	l, err := scanLienRow(row)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, entity.ErrNotFound
+		}
+		return nil, fmt.Errorf("querying lien by id %q: %w", id, err)
+	}
+
+	return l, nil
 }
 
 func (r *LienPG) GetActive(ctx context.Context, cadastral string) (*entity.Encumbrance, error) {

@@ -56,6 +56,9 @@ pub fn handler(
     parcel.risk_flag = 0;
     parcel.registered_at = Clock::get()?.unix_timestamp;
     parcel.bump = ctx.bumps.parcel_config;
+    parcel.ai_score = 0;
+    parcel.collateral_grade = 3; // D = unknown
+    parcel.recommended_ltv = 0;
 
     emit!(ParcelRegistered {
         cadastral_number,

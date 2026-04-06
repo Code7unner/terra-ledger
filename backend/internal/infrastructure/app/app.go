@@ -18,6 +18,7 @@ import (
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/infrastructure/config"
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/infrastructure/migration"
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/infrastructure/service"
+	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/usecase/ndvi"
 )
 
 func Start() {
@@ -60,7 +61,6 @@ func Start() {
 	// External adapters
 	solanaRPC := repo.NewSolanaRPC(cfg.SolanaRPCURL, &logger)
 	claudeScorer := repo.NewClaudeScorer(cfg.AnthropicAPIKey, cfg.AnthropicModel, &logger)
-	// TODO: Phase 3
 	copernicusClient := repo.NewCopernicusClient(cfg.CopernicusClientID, cfg.CopernicusClientSecret, &logger)
 
 	// Signatures
@@ -69,18 +69,25 @@ func Start() {
 	// Consent
 	consentRepo := repo.NewConsentPG(db, &logger)
 
+	// Agent decisions
+	agentDecisionRepo := repo.NewAgentDecisionPG(db, &logger)
+
 	// Geocoder
 	geo := geocoder.NewRepository()
 	if err := geo.Init(); err != nil {
 		logger.Fatal().Err(err).Msg("failed to init geocoder")
 	}
 
+	// NDVI UseCase
+	ndviUseCase := ndvi.New(copernicusClient, geo, &logger)
+
 	// Handlers
-	parcelHandler := handler.NewParcelHandler(parcelRepo, solanaRPC, copernicusClient, geo, &logger)
+	parcelHandler := handler.NewParcelHandler(parcelRepo, solanaRPC, copernicusClient, certRepo, geo, &logger)
 	certHandler := handler.NewCertificateHandler(certRepo, parcelRepo)
 	lienHandler := handler.NewLienHandler(lienRepo, parcelRepo, solanaRPC, &logger)
-	creditHandler := handler.NewCreditHandler(parcelRepo, certRepo, lienRepo, scoreRepo, consentRepo, claudeScorer)
+	creditHandler := handler.NewCreditHandler(parcelRepo, certRepo, lienRepo, scoreRepo, consentRepo, claudeScorer, ndviUseCase, &logger)
 	consentHandler := handler.NewConsentHandler(consentRepo)
+	agentHandler := handler.NewAgentHandler(agentDecisionRepo)
 	webhookHandler := handler.NewWebhookHandler(
 		cfg.HeliusWebhookSecret,
 		cfg.TerraTokenProgramID,
@@ -96,6 +103,7 @@ func Start() {
 		Certificate: certHandler,
 		Webhook:     webhookHandler,
 		Consent:     consentHandler,
+		Agent:       agentHandler,
 		Logger:      &logger,
 	}
 
@@ -113,7 +121,10 @@ func Start() {
 	}
 
 	// Background services
-	keeper := service.NewKeeper(solanaRPC, parcelRepo, cfg.KeeperInterval, relayKey, cfg.TerraTokenProgramID, &logger)
+	keeper := service.NewKeeper(
+		solanaRPC, parcelRepo, certRepo, scoreRepo, agentDecisionRepo, claudeScorer, ndviUseCase,
+		cfg.KeeperInterval, relayKey, cfg.TerraTokenProgramID, &logger,
+	)
 	go keeper.Start(ctx)
 
 	reconciler := service.NewReconciler(

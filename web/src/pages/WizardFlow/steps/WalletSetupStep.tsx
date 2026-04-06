@@ -16,10 +16,14 @@ export function WalletSetupStep({ onUpdate, onNext }: Props) {
   const { connected, walletAddress: extensionWallet } = useSignAndSend()
   const { connectViaQR, qrUrl, status, walletAddress: deeplinkWallet, error } = usePhantomDeeplink()
   const hasExtension = typeof window !== 'undefined' && 'solana' in window
+
+  // Track whether wallet was already connected when this step mounted.
+  // If so, show a "Continue" button instead of auto-advancing (user pressed Back).
+  const wasConnectedOnMount = useRef(connected && !!extensionWallet)
   const advancedRef = useRef(false)
 
   useEffect(() => {
-    if (advancedRef.current) return
+    if (advancedRef.current || wasConnectedOnMount.current) return
 
     if (connected && extensionWallet) {
       advancedRef.current = true
@@ -50,7 +54,16 @@ export function WalletSetupStep({ onUpdate, onNext }: Props) {
         Your wallet is like a digital ID for your land. It proves ownership without paperwork.
       </p>
 
-      {hasExtension ? (
+      {connected && extensionWallet ? (
+        <div className={styles.walletHelp}>
+          <p className={styles.mintConfirm}>
+            Connected: {String(extensionWallet).slice(0, 8)}...{String(extensionWallet).slice(-4)}
+          </p>
+          <Button onClick={() => { onUpdate({ walletAddress: String(extensionWallet) }); onNext() }}>
+            Continue
+          </Button>
+        </div>
+      ) : hasExtension ? (
         <div className={styles.walletHelp}>
           <p className={styles.stepHint}>
             Click <strong>Connect Wallet</strong> in the top right corner to continue.

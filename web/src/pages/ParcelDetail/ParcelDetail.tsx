@@ -6,16 +6,25 @@ import { MetricCard } from '../../components/MetricCard/MetricCard'
 import { Skeleton } from '../../components/Skeleton/Skeleton'
 import { NDVIChart } from '../../components/NDVIChart/NDVIChart'
 import { CreditGauge } from '../../components/CreditGauge/CreditGauge'
+import { RadarChart } from '../../components/RadarChart/RadarChart'
+import { WaterStressAlert } from '../../components/WaterStressAlert/WaterStressAlert'
 import { useCreditProfile } from '../../hooks/useCreditProfile'
+import { useSatelliteIndices } from '../../hooks/useSatelliteIndices'
+import { AgentActivity } from '../../components/AgentActivity/AgentActivity'
 import styles from './ParcelDetail.module.css'
 
 export default function ParcelDetail() {
   const { cadastral } = useParams<{ cadastral: string }>()
   const { data, loading, error, fetchProfile } = useCreditProfile()
+  const { ahi, fetchIndices } = useSatelliteIndices()
 
   useEffect(() => {
     if (cadastral) fetchProfile(cadastral)
   }, [cadastral, fetchProfile])
+
+  useEffect(() => {
+    if (cadastral) fetchIndices(cadastral)
+  }, [cadastral, fetchIndices])
 
   if (loading) {
     return (
@@ -140,6 +149,42 @@ export default function ParcelDetail() {
         </Card>
       )}
 
+      {ahi && (
+        <Card padding="lg">
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 'var(--spacing-md)',
+            }}
+          >
+            <h2 className={styles.sectionTitle}>Agricultural Health Index</h2>
+            <WaterStressAlert waterStress={ahi.water_stress} />
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-lg)',
+            }}
+          >
+            <RadarChart
+              ndvi={ahi.ndvi}
+              ndwi={ahi.ndwi_norm}
+              evi={ahi.evi_norm}
+              lai={ahi.lai_norm}
+            />
+            <div>
+              <MetricCard
+                label="Composite AHI"
+                value={(ahi.composite * 100).toFixed(0) + '%'}
+              />
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card padding="lg">
         <h2 className={styles.sectionTitle}>Lien History</h2>
         {encumbrances.active_liens && encumbrances.active_liens.length > 0 ? (
@@ -170,6 +215,8 @@ export default function ParcelDetail() {
           Total historical liens: {encumbrances.lien_count_historical}
         </div>
       </Card>
+
+      <AgentActivity cadastral={parcel.cadastral_number} />
     </div>
   )
 }

@@ -120,6 +120,43 @@ func (r *ParcelPG) ListNeedingSeasonalCheck(ctx context.Context, maxAge time.Dur
 	return parcels, rows.Err()
 }
 
+func (r *ParcelPG) ListAll(ctx context.Context) ([]entity.Parcel, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT p.id, p.cadastral_number, p.owner_wallet, p.on_chain_address,
+		       p.area_ha, p.land_class, p.oblast, p.latitude, p.longitude
+		FROM parcels p
+		ORDER BY p.registered_at DESC
+		LIMIT 200`)
+	if err != nil {
+		return nil, fmt.Errorf("listing all parcels: %w", err)
+	}
+	defer rows.Close()
+
+	var parcels []entity.Parcel
+	for rows.Next() {
+		var p entity.Parcel
+		var onChain, oblast sql.NullString
+		var lat, lon sql.NullFloat64
+		if err := rows.Scan(
+			&p.ID, &p.CadastralNumber, &p.OwnerWallet, &onChain,
+			&p.AreaHa, &p.LandClass, &oblast, &lat, &lon,
+		); err != nil {
+			return nil, fmt.Errorf("scanning parcel row: %w", err)
+		}
+		p.OnChainAddress = onChain.String
+		p.Oblast = oblast.String
+		if lat.Valid {
+			p.Latitude = &lat.Float64
+		}
+		if lon.Valid {
+			p.Longitude = &lon.Float64
+		}
+		parcels = append(parcels, p)
+	}
+
+	return parcels, rows.Err()
+}
+
 func (r *ParcelPG) UpdateOnChainAddress(ctx context.Context, cadastral, addr string) error {
 	res, err := r.db.ExecContext(ctx, `
 		UPDATE parcels SET on_chain_address = $1, updated_at = NOW()

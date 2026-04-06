@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog"
 
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/entity"
+	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/usecase/ndvi"
 	"github.com/code7unner/decentrathon5/terra-ledger/backend/internal/usecase/repository"
 )
 
@@ -19,6 +21,8 @@ type CreditHandler struct {
 	scoreRepo   repository.CreditScoreRepo
 	consentRepo repository.ConsentRepo
 	scorer      repository.CreditScorer
+	ndviUseCase *ndvi.UseCase
+	logger      *zerolog.Logger
 }
 
 func NewCreditHandler(
@@ -28,6 +32,8 @@ func NewCreditHandler(
 	sr repository.CreditScoreRepo,
 	consentRepo repository.ConsentRepo,
 	scorer repository.CreditScorer,
+	ndviUseCase *ndvi.UseCase,
+	logger *zerolog.Logger,
 ) *CreditHandler {
 	return &CreditHandler{
 		parcelRepo:  pr,
@@ -36,6 +42,8 @@ func NewCreditHandler(
 		scoreRepo:   sr,
 		consentRepo: consentRepo,
 		scorer:      scorer,
+		ndviUseCase: ndviUseCase,
+		logger:      logger,
 	}
 }
 
@@ -121,18 +129,27 @@ func (h *CreditHandler) buildFullProfile(
 	c *fiber.Ctx, cadastral string, parcel *entity.Parcel,
 ) entity.CreditProfile {
 	certs, _ := h.certRepo.ListByParcel(c.Context(), cadastral)
+
+	// Auto-fetch satellite data if DB has no certificates
+	if len(certs) == 0 && h.ndviUseCase != nil && h.certRepo != nil {
+		fetched, err := h.ndviUseCase.FetchAndStoreSeries(c.Context(), *parcel, 12, h.certRepo)
+		if err != nil {
+			h.logger.Warn().Err(err).Str("cadastral", cadastral).Msg("auto-fetch satellite data failed")
+		} else if len(fetched) > 0 {
+			certs = fetched
+		}
+	}
+
 	liens, _ := h.lienRepo.ListByParcel(c.Context(), cadastral)
 
 	activeLiens := filterActiveLiens(liens)
 	score := h.resolveScore(c, cadastral, parcel, certs, activeLiens, liens)
 
+	productivity := buildProductivityData(certs)
+
 	return entity.CreditProfile{
-		Parcel: *parcel,
-		Productivity: entity.ProductivityData{
-			Certificates: certs,
-			NDVITrend:    computeNDVITrend(certs),
-			DormancyRisk: "low",
-		},
+		Parcel:       *parcel,
+		Productivity: productivity,
 		Encumbrances: entity.EncumbranceData{
 			ActiveLiens:         activeLiens,
 			LienCountHistorical: len(liens),
@@ -140,6 +157,54 @@ func (h *CreditHandler) buildFullProfile(
 		},
 		Credit: score,
 	}
+}
+
+func buildProductivityData(certs []entity.NDVICertificate) entity.ProductivityData {
+	pd := entity.ProductivityData{
+		Certificates: certs,
+		NDVITrend:    computeNDVITrend(certs),
+		DormancyRisk: "low",
+	}
+
+	ndwiVals, eviVals := extractIndexValues(certs)
+	if len(ndwiVals) > 0 {
+		pd.NDWITrend = string(ndvi.ComputeIndexTrend(ndwiVals))
+	}
+	if len(eviVals) > 0 {
+		pd.EVITrend = string(ndvi.ComputeIndexTrend(eviVals))
+	}
+
+	avgNDWI := avgFloat(ndwiVals)
+	if ndvi.ComputeWaterStressRisk(avgNDWI) {
+		pd.WaterStressRisk = "high"
+	} else {
+		pd.WaterStressRisk = "low"
+	}
+
+	return pd
+}
+
+func extractIndexValues(certs []entity.NDVICertificate) (ndwi, evi []float64) {
+	for _, c := range certs {
+		if c.NDWIScore != nil {
+			ndwi = append(ndwi, *c.NDWIScore)
+		}
+		if c.EVIScore != nil {
+			evi = append(evi, *c.EVIScore)
+		}
+	}
+	return ndwi, evi
+}
+
+func avgFloat(vals []float64) float64 {
+	if len(vals) == 0 {
+		return 0
+	}
+	var sum float64
+	for _, v := range vals {
+		sum += v
+	}
+	return sum / float64(len(vals))
 }
 
 func (h *CreditHandler) resolveScore(
@@ -166,7 +231,9 @@ func (h *CreditHandler) resolveScore(
 	}
 
 	fresh.ParcelID = parcel.ID
-	_ = h.scoreRepo.Upsert(c.Context(), fresh)
+	if err := h.scoreRepo.Upsert(c.Context(), fresh); err != nil {
+		h.logger.Error().Err(err).Str("cadastral", cadastral).Msg("failed to cache credit score")
+	}
 	return fresh
 }
 
@@ -176,7 +243,7 @@ func buildScoringInput(
 	activeLiens []entity.Encumbrance,
 	allLiens []entity.Encumbrance,
 ) *entity.ScoringInput {
-	return &entity.ScoringInput{
+	input := &entity.ScoringInput{
 		CadastralNumber: parcel.CadastralNumber,
 		AreaHa:          parcel.AreaHa,
 		LandClass:       parcel.LandClass,
@@ -184,6 +251,43 @@ func buildScoringInput(
 		NDVIHistory:     certs,
 		ActiveLiens:     len(activeLiens),
 		TotalLiens:      len(allLiens),
+	}
+
+	enrichInputFromCerts(input, certs)
+	return input
+}
+
+func enrichInputFromCerts(input *entity.ScoringInput, certs []entity.NDVICertificate) {
+	if len(certs) == 0 {
+		return
+	}
+
+	ndviVals := make([]float64, 0, len(certs))
+	var ndwiSum, eviSum float64
+	var ndwiCount, eviCount int
+
+	for _, c := range certs {
+		ndviVals = append(ndviVals, c.NDVIScore)
+		if c.NDWIScore != nil {
+			ndwiSum += *c.NDWIScore
+			ndwiCount++
+		}
+		if c.EVIScore != nil {
+			eviSum += *c.EVIScore
+			eviCount++
+		}
+	}
+
+	input.NDVITrend = string(ndvi.ComputeIndexTrend(ndviVals))
+
+	if ndwiCount > 0 {
+		avgNDWI := ndwiSum / float64(ndwiCount)
+		input.AvgNDWI = &avgNDWI
+		input.WaterStressRisk = ndvi.ComputeWaterStressRisk(avgNDWI)
+	}
+	if eviCount > 0 {
+		avgEVI := eviSum / float64(eviCount)
+		input.AvgEVI = &avgEVI
 	}
 }
 

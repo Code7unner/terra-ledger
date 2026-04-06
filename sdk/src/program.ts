@@ -31,6 +31,7 @@ const SEASONAL_CHECK_DISCRIMINATOR = new Uint8Array([161, 143, 168, 146, 218, 14
 const VERIFY_PARCEL_DISCRIMINATOR = new Uint8Array([45, 47, 217, 191, 140, 31, 95, 178])
 const REGISTER_ENCUMBRANCE_DISCRIMINATOR = new Uint8Array([5, 82, 66, 155, 31, 178, 204, 252])
 const RELEASE_ENCUMBRANCE_DISCRIMINATOR = new Uint8Array([144, 232, 132, 141, 47, 237, 85, 194])
+const UPDATE_RISK_ASSESSMENT_DISCRIMINATOR = new Uint8Array([206, 125, 9, 31, 32, 136, 237, 16])
 
 // ---------------------------------------------------------------------------
 // PDA derivation helpers
@@ -232,6 +233,37 @@ export async function buildVerifyParcelInstruction(
     programAddress: TERRA_TOKEN_PROGRAM_ID,
     accounts: [
       { address: parcelPda, role: AccountRole.READONLY },
+    ],
+    data,
+  }
+}
+
+/**
+ * Build `update_risk_assessment` instruction.
+ */
+export function buildUpdateRiskAssessmentInstruction(
+  parcelPda: Address,
+  authority: Address,
+  cadastralNumber: string,
+  aiScore: number,
+  collateralGrade: number,
+  recommendedLtv: number,
+): Instruction {
+  const cadastralBytes = new TextEncoder().encode(cadastralNumber)
+  const data = new Uint8Array(8 + 4 + cadastralBytes.length + 1 + 1 + 2)
+  data.set(UPDATE_RISK_ASSESSMENT_DISCRIMINATOR, 0)
+  new DataView(data.buffer).setUint32(8, cadastralBytes.length, true)
+  data.set(cadastralBytes, 12)
+  const off = 12 + cadastralBytes.length
+  data[off] = aiScore
+  data[off + 1] = collateralGrade
+  new DataView(data.buffer).setUint16(off + 2, recommendedLtv, true)
+
+  return {
+    programAddress: TERRA_TOKEN_PROGRAM_ID,
+    accounts: [
+      { address: parcelPda, role: AccountRole.WRITABLE },
+      { address: authority, role: AccountRole.WRITABLE_SIGNER },
     ],
     data,
   }

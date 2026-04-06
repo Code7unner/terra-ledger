@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
@@ -41,7 +43,8 @@ func (s *CreditHandlerSuite) SetupTest() {
 	s.lienRepo = mock.NewMockLienRepo(s.ctrl)
 	s.scoreRepo = mock.NewMockCreditScoreRepo(s.ctrl)
 	s.scorer = mock.NewMockCreditScorer(s.ctrl)
-	s.handler = NewCreditHandler(s.parcelRepo, s.certRepo, s.lienRepo, s.scoreRepo, nil, s.scorer)
+	testLogger := zerolog.New(os.Stderr)
+	s.handler = NewCreditHandler(s.parcelRepo, s.certRepo, s.lienRepo, s.scoreRepo, nil, s.scorer, nil, &testLogger)
 
 	s.cadastral = fmt.Sprintf("KZ-%s-%03d", gofakeit.LetterN(4), gofakeit.IntRange(1, 999))
 }
@@ -243,9 +246,10 @@ func (s *CreditHandlerSuite) TestGetProfile_ConsentGated() {
 
 			// Create handler with consent repo
 			s.consentRepo = mock.NewMockConsentRepo(s.ctrl)
+			tl := zerolog.New(os.Stderr)
 			s.handler = NewCreditHandler(
 				s.parcelRepo, s.certRepo, s.lienRepo, s.scoreRepo,
-				s.consentRepo, s.scorer,
+				s.consentRepo, s.scorer, nil, &tl,
 			)
 
 			app := fiber.New()
