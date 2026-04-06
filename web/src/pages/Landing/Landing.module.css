@@ -259,7 +259,7 @@
 
 /* ── Stats ── */
 .stats {
-  padding: var(--spacing-3xl) var(--spacing-xl);
+  padding: var(--spacing-2xl) var(--spacing-xl);
 }
 
 .statsInner {
@@ -368,7 +368,7 @@
 
 /* ── Roles ── */
 .roles {
-  padding: var(--spacing-3xl) var(--spacing-xl);
+  padding: var(--spacing-2xl) var(--spacing-xl) var(--spacing-3xl);
 }
 
 .rolesInner {
@@ -425,7 +425,7 @@
 
 /* ── Links ── */
 .links {
-  padding: var(--spacing-2xl) var(--spacing-xl);
+  padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-2xl);
 }
 
 .linksInner {
