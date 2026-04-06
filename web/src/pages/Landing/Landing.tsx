@@ -31,7 +31,7 @@ function useCountUp(target: number, duration: number, decimals: number, triggerR
           requestAnimationFrame(step)
         }
       },
-      { threshold: 0.3 },
+      { threshold: 0.1 },
     )
     observer.observe(el)
     return () => observer.disconnect()
