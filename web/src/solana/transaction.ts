@@ -66,6 +66,15 @@ function parseTransactionError(err: unknown): string {
   return msg.length > 200 ? msg.slice(0, 200) + '...' : msg
 }
 
+/** JSON.stringify that handles BigInt values (common in @solana/kit responses) */
+function safeStringify(val: unknown): string {
+  try {
+    return JSON.stringify(val, (_key, v) => typeof v === 'bigint' ? v.toString() : v)
+  } catch {
+    return String(val)
+  }
+}
+
 function extractErrorString(err: unknown): string {
   if (err == null) return ''
   if (typeof err === 'string') return err
@@ -98,7 +107,7 @@ function extractErrorString(err: unknown): string {
         }
       }
       if (ctx.transactionPlanResult) {
-        parts.push(JSON.stringify(ctx.transactionPlanResult))
+        parts.push(safeStringify(ctx.transactionPlanResult))
       }
     }
 
@@ -106,10 +115,10 @@ function extractErrorString(err: unknown): string {
       parts.push(obj.logs.join(' '))
     }
     if (obj.transactionPlanResult) {
-      parts.push(JSON.stringify(obj.transactionPlanResult))
+      parts.push(safeStringify(obj.transactionPlanResult))
     }
     if (obj.data) {
-      parts.push(typeof obj.data === 'string' ? obj.data : JSON.stringify(obj.data))
+      parts.push(typeof obj.data === 'string' ? obj.data : safeStringify(obj.data))
     }
   }
 
