@@ -296,6 +296,7 @@ export async function buildRegisterEncumbranceInstruction(
       { address: parcelPda, role: AccountRole.READONLY },
       { address: lender, role: AccountRole.WRITABLE_SIGNER },
       { address: SYSTEM_PROGRAM, role: AccountRole.READONLY },
+      { address: TERRA_TOKEN_PROGRAM_ID, role: AccountRole.READONLY },
     ],
     data,
   }

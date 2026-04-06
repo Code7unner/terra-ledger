@@ -37,7 +37,7 @@ pub struct RegisterEncumbrance<'info> {
 
     pub system_program: Program<'info, System>,
 
-    /// The terra_token program for CPI verification
+    /// terra_token program — required in transaction for CPI invoke
     pub terra_token_program: Program<'info, terra_token::program::TerraToken>,
 }
 

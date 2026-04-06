@@ -131,7 +131,7 @@ describe("lien_registry", () => {
             parcelConfig: parcelPda,
             lender: env.lender2.publicKey,
             systemProgram: SystemProgram.programId,
-            terraTokenProgram: env.terraToken.programId,
+  
           })
           .signers([env.lender2])
           .rpc();
@@ -266,7 +266,7 @@ describe("lien_registry", () => {
             parcelConfig: fakeParcelPda,
             lender: env.lender1.publicKey,
             systemProgram: SystemProgram.programId,
-            terraTokenProgram: env.terraToken.programId,
+  
           })
           .signers([env.lender1])
           .rpc();
@@ -332,7 +332,7 @@ describe("lien_registry", () => {
             parcelConfig: parcelPda,
             lender: env.lender1.publicKey,
             systemProgram: SystemProgram.programId,
-            terraTokenProgram: env.terraToken.programId,
+  
           })
           .signers([env.lender1])
           .rpc();
