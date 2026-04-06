@@ -23,6 +23,7 @@ type ParcelHandlerSuite struct {
 	ctrl       *gomock.Controller
 	parcelRepo *mock.MockParcelRepo
 	solana     *mock.MockSolanaClient
+	geocoder   *mock.MockGeocoder
 	handler    *ParcelHandler
 
 	cadastral string
@@ -36,9 +37,10 @@ func (s *ParcelHandlerSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.parcelRepo = mock.NewMockParcelRepo(s.ctrl)
 	s.solana = mock.NewMockSolanaClient(s.ctrl)
+	s.geocoder = mock.NewMockGeocoder(s.ctrl)
 
 	logger := zerolog.Nop()
-	s.handler = NewParcelHandler(s.parcelRepo, s.solana, nil, nil, nil, &logger)
+	s.handler = NewParcelHandler(s.parcelRepo, s.solana, nil, nil, s.geocoder, &logger)
 	s.cadastral = fmt.Sprintf("KZ-%s-%03d", gofakeit.LetterN(4), gofakeit.IntRange(1, 999))
 }
 
@@ -71,6 +73,7 @@ func parcelRegisterCases() []parcelRegisterCase {
 				return b
 			},
 			setupMock: func(s *ParcelHandlerSuite) {
+				s.geocoder.EXPECT().Resolve(gomock.Any(), gomock.Any()).Return(51.16, 71.47).Times(1)
 				s.parcelRepo.EXPECT().
 					Create(gomock.Any(), matchCadastral(s.cadastral)).
 					Return(nil).
@@ -85,6 +88,7 @@ func parcelRegisterCases() []parcelRegisterCase {
 				return b
 			},
 			setupMock: func(s *ParcelHandlerSuite) {
+				s.geocoder.EXPECT().Resolve(gomock.Any(), gomock.Any()).Return(51.16, 71.47).Times(1)
 				s.parcelRepo.EXPECT().
 					Create(gomock.Any(), matchCadastral(s.cadastral)).
 					Return(entity.ErrAlreadyExists).

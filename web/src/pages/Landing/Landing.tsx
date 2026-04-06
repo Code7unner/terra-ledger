@@ -175,7 +175,7 @@ export default function Landing() {
         <div className={styles.rolesInner}>
           <h2 className={styles.sectionHeading}>Get Started</h2>
           <div className={styles.roleGrid}>
-            <Link to="/app?role=farmer&demo=true" className={styles.roleCard}>
+            <Link to="/app?role=farmer&demo=true" className={`${styles.roleCard} ${styles.roleCardFarmer}`}>
               <h3 className={styles.roleTitle}>I'm a Farmer</h3>
               <p className={styles.roleDesc}>
                 Register your land parcel and get a satellite-verified credit score in
@@ -183,7 +183,7 @@ export default function Landing() {
               </p>
               <span className={styles.roleArrow}>&rarr;</span>
             </Link>
-            <Link to="/app?role=lender&demo=true" className={styles.roleCard}>
+            <Link to="/app?role=lender&demo=true" className={`${styles.roleCard} ${styles.roleCardLender}`}>
               <h3 className={styles.roleTitle}>I'm a Lender</h3>
               <p className={styles.roleDesc}>
                 Search verified parcels and assess credit risk with on-chain transparency

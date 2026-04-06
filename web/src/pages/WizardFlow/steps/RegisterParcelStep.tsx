@@ -16,6 +16,7 @@ interface Props {
   onUpdate: (partial: Partial<WizardData>) => void
   onNext: () => void
   onBack: () => void
+  onSkipToSummary?: () => void
 }
 
 const OBLAST_OPTIONS = [
@@ -44,7 +45,7 @@ const LAND_CLASS_OPTIONS = [
   { value: 5, label: '5 - Lowest (desert, unused)' },
 ]
 
-export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack }: Props) {
+export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onSkipToSummary }: Props) {
   const { signAndSend, connected, walletAddress: extensionWallet, txStatus } = useSignAndSend()
   const { registerParcel } = useParcel()
   const { toast } = useToast()
@@ -60,7 +61,7 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack }: P
 
   useEffect(() => {
     if (isDemo && !cadastral) {
-      setCadastral('KZ11-0032-001')
+      setCadastral('KZ11-0033-001')
       setAreaHa(150)
       setLandClass(2)
       setOblast('Akmola')
@@ -85,16 +86,42 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack }: P
     })
 
     try {
+      let alreadyOnChain = false
+
       if (connected && walletAddress) {
-        const egissHash = new Uint8Array(32)
-        const ix = await buildRegisterParcelInstruction(
-          walletAddress as Address,
-          cadastral,
-          areaHa,
-          landClass,
-          egissHash,
-        )
-        await signAndSend([ix])
+        try {
+          const egissHash = new Uint8Array(32)
+          const ix = await buildRegisterParcelInstruction(
+            walletAddress as Address,
+            cadastral,
+            areaHa,
+            landClass,
+            egissHash,
+          )
+          await signAndSend([ix])
+        } catch (txErr: unknown) {
+          const msg = txErr instanceof Error ? txErr.message : String(txErr)
+          const isAlreadyRegistered =
+            msg.includes('already in use') ||
+            msg.includes('custom program error: 0x0') ||
+            msg.includes('code 0') ||
+            msg.includes('Code: 0')
+          if (!isAlreadyRegistered) {
+            throw txErr
+          }
+          alreadyOnChain = true
+        }
+      }
+
+      if (alreadyOnChain) {
+        toast('Parcel already registered on-chain. Loading profile...', 'success')
+        setSubmitting(false)
+        if (onSkipToSummary) {
+          onSkipToSummary()
+        } else {
+          onNext()
+        }
+        return
       }
 
       await registerParcel({
@@ -134,7 +161,7 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack }: P
         <div className={styles.formFields}>
           <Input
             label="Cadastral Number"
-            placeholder="e.g. KZ11-0032-001"
+            placeholder="e.g. KZ11-0033-001"
             value={cadastral}
             onChange={(e) => setCadastral(e.target.value)}
           />

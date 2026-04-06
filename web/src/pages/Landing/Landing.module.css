@@ -76,7 +76,22 @@
 .heroBackground {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 30%, rgba(37, 208, 171, 0.06) 0%, transparent 60%);
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(37, 208, 171, 0.10) 0%, transparent 55%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 63px,
+      rgba(37, 208, 171, 0.03) 63px,
+      rgba(37, 208, 171, 0.03) 64px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 63px,
+      rgba(37, 208, 171, 0.03) 63px,
+      rgba(37, 208, 171, 0.03) 64px
+    );
   pointer-events: none;
 }
 
@@ -246,6 +261,22 @@
   transform: translateY(0);
 }
 
+/* Stagger pipeline cards */
+.visible .featureCard:nth-child(1) { transition-delay: 0ms; }
+.visible .featureCard:nth-child(2) { transition-delay: 150ms; }
+.visible .featureCard:nth-child(3) { transition-delay: 300ms; }
+
+.featureCard {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 400ms ease-out, transform 400ms ease-out, border-color var(--transition);
+}
+
+.visible .featureCard {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* ── Section Heading ── */
 .sectionHeading {
   font-family: var(--font-heading);
@@ -318,8 +349,41 @@
   top: 24px;
   left: calc(33.33% / 2);
   right: calc(33.33% / 2);
-  height: 1px;
-  border-top: 2px dashed var(--color-border);
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-border) 0,
+    var(--color-border) 6px,
+    transparent 6px,
+    transparent 10px
+  );
+}
+
+/* Traveling dot on the connecting line */
+.pipelineGrid::after {
+  content: '';
+  position: absolute;
+  top: 21px;
+  left: calc(33.33% / 2);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 8px rgba(37, 208, 171, 0.6);
+  opacity: 0;
+}
+
+.visible .pipelineGrid::after {
+  opacity: 1;
+  animation: travelDot 3s ease-in-out 600ms infinite;
+}
+
+@keyframes travelDot {
+  0% { left: calc(33.33% / 2); opacity: 0; }
+  5% { opacity: 1; }
+  45% { opacity: 1; }
+  50% { left: calc(100% - 33.33% / 2 - 8px); opacity: 0; }
+  100% { left: calc(100% - 33.33% / 2 - 8px); opacity: 0; }
 }
 
 .featureCard {
@@ -329,13 +393,17 @@
   border-radius: var(--radius-md);
   padding: var(--spacing-xl);
   padding-top: calc(var(--spacing-xl) + 20px);
+  transition: border-color var(--transition);
+}
+
+.featureCard:hover {
+  border-color: var(--color-border-hover);
 }
 
 .stepBadge {
   position: absolute;
   top: calc(-1 * var(--spacing-md));
-  left: 50%;
-  transform: translateX(-50%);
+  left: var(--spacing-xl);
   width: 48px;
   height: 48px;
   display: flex;
@@ -348,6 +416,27 @@
   font-size: var(--font-body-sm);
   font-weight: 700;
   color: var(--color-primary);
+  box-shadow: 0 0 0 0 rgba(37, 208, 171, 0);
+  transition: box-shadow 400ms ease-out;
+}
+
+/* Sequential badge glow: 01 → 02 → 03 */
+.visible .featureCard:nth-child(1) .stepBadge {
+  animation: badgeGlow 3s ease-in-out 600ms infinite;
+}
+
+.visible .featureCard:nth-child(2) .stepBadge {
+  animation: badgeGlow 3s ease-in-out 1.6s infinite;
+}
+
+.visible .featureCard:nth-child(3) .stepBadge {
+  animation: badgeGlow 3s ease-in-out 2.6s infinite;
+}
+
+@keyframes badgeGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 208, 171, 0); }
+  15% { box-shadow: 0 0 12px 4px rgba(37, 208, 171, 0.3); }
+  30% { box-shadow: 0 0 0 0 rgba(37, 208, 171, 0); }
 }
 
 .featureTitle {
@@ -356,14 +445,12 @@
   font-weight: 600;
   color: var(--color-text);
   margin-bottom: var(--spacing-sm);
-  text-align: center;
 }
 
 .featureDesc {
   font-size: var(--font-body-sm);
   color: var(--color-text-secondary);
   line-height: 1.6;
-  text-align: center;
 }
 
 /* ── Roles ── */
@@ -395,8 +482,23 @@
 }
 
 .roleCard:hover {
-  border-color: var(--color-primary);
   transform: translateY(-2px);
+}
+
+.roleCardFarmer:hover {
+  border-color: #22c55e;
+}
+
+.roleCardFarmer:hover .roleArrow {
+  color: #22c55e;
+}
+
+.roleCardLender:hover {
+  border-color: #3b82f6;
+}
+
+.roleCardLender:hover .roleArrow {
+  color: #3b82f6;
 }
 
 .roleTitle {
@@ -487,6 +589,7 @@
     grid-template-columns: 1fr;
   }
   .pipelineGrid::before { display: none; }
+  .pipelineGrid::after { display: none; }
   .roleGrid { grid-template-columns: 1fr; }
   .statValue { font-size: 28px; }
   .scrollIndicator { display: none; }
@@ -497,4 +600,6 @@
   .btnPrimary { animation: none; }
   .scrollMouse::before { animation: none; }
   .animatable { opacity: 1; transform: none; transition: none; }
+  .visible .pipelineGrid::after { animation: none; opacity: 0; }
+  .visible .featureCard .stepBadge { animation: none; }
 }

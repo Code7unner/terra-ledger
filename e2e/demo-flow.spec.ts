@@ -24,7 +24,7 @@ test.describe("TerraLedger Demo Flow", () => {
     // Search step should appear — fill cadastral number
     const searchInput = page.locator('input[placeholder*="cadastral" i], input[type="text"]').first();
     await expect(searchInput).toBeVisible({ timeout: 5000 });
-    await searchInput.fill("KZ11-0032-001");
+    await searchInput.fill("KZ11-0033-001");
 
     // Submit search (click the button or press enter)
     const searchButton = page.getByRole("button", { name: /search|find|next/i });
@@ -35,14 +35,14 @@ test.describe("TerraLedger Demo Flow", () => {
     }
 
     // Should see profile data — wait for it to load
-    await expect(page.getByText("KZ11-0032-001")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("KZ11-0033-001")).toBeVisible({ timeout: 10000 });
   });
 
   test("parcel detail page shows credit profile sections", async ({ page }) => {
-    await page.goto("/parcel/KZ11-0032-001");
+    await page.goto("/parcel/KZ11-0033-001");
 
     // Wait for data to load
-    await expect(page.getByText("Parcel KZ11-0032-001")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Parcel KZ11-0033-001")).toBeVisible({ timeout: 10000 });
 
     // Parcel details section
     await expect(page.getByText("Parcel Details")).toBeVisible();

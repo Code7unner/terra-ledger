@@ -30,7 +30,7 @@ export function SummaryStep({ cadastral, onRestart, showLienButton, onRegisterLi
   }, [cadastral, fetchProfile, fetchLiens])
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/parcel/${encodeURIComponent(cadastral)}`
+    const url = `${window.location.origin}/app/parcel/${encodeURIComponent(cadastral)}`
     try {
       await navigator.clipboard.writeText(url)
       setCopied(true)

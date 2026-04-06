@@ -782,3 +782,36 @@ func (mr *MockConsentRepoMockRecorder) Revoke(ctx, walletAddress any) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockConsentRepo)(nil).Revoke), ctx, walletAddress)
 }
+
+// MockGeocoder is a mock of Geocoder interface.
+type MockGeocoder struct {
+	ctrl     *gomock.Controller
+	recorder *MockGeocoderMockRecorder
+}
+
+type MockGeocoderMockRecorder struct {
+	mock *MockGeocoder
+}
+
+func NewMockGeocoder(ctrl *gomock.Controller) *MockGeocoder {
+	mock := &MockGeocoder{ctrl: ctrl}
+	mock.recorder = &MockGeocoderMockRecorder{mock}
+	return mock
+}
+
+func (m *MockGeocoder) EXPECT() *MockGeocoderMockRecorder {
+	return m.recorder
+}
+
+func (m *MockGeocoder) Resolve(cadastral string, oblast string) (float64, float64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Resolve", cadastral, oblast)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(float64)
+	return ret0, ret1
+}
+
+func (mr *MockGeocoderMockRecorder) Resolve(cadastral, oblast any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resolve", reflect.TypeOf((*MockGeocoder)(nil).Resolve), cadastral, oblast)
+}

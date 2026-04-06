@@ -21,10 +21,12 @@ NDVI chart, credit gauge, Agricultural Health Index radar, and lien history for 
 
 ![Dashboard](docs/screenshots/dashboard-credit-profile.png)
 
-### AI Risk Assessment On-Chain (Solana Explorer)
-The keeper bot writes AI credit scores directly on-chain via `update_risk_assessment`. Each transaction is verifiable on Solana Explorer.
+[//]: # (### AI Risk Assessment On-Chain &#40;Solana Explorer&#41;)
 
-![Solana Explorer](docs/screenshots/solana-explorer-risk-assessment.png)
+[//]: # (The keeper bot writes AI credit scores directly on-chain via `update_risk_assessment`. Each transaction is verifiable on Solana Explorer.)
+
+[//]: # ()
+[//]: # (![Solana Explorer]&#40;docs/screenshots/solana-explorer-risk-assessment.png&#41;)
 
 ### Double-Pledge Prevention (Transaction Error)
 Attempting to register a second lien on an already-encumbered parcel fails atomically on-chain with `ActiveLienExists` error.
