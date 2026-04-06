@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from 'react'
+import { useReducer, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Stepper } from '../../components/Stepper/Stepper'
 import { LandingStep } from './steps/LandingStep'
@@ -40,6 +40,7 @@ type Action =
   | { type: 'BACK' }
   | { type: 'UPDATE_DATA'; partial: Partial<WizardData> }
   | { type: 'UPDATE_AND_NEXT'; partial: Partial<WizardData> }
+  | { type: 'GO_TO_STEP'; step: number }
   | { type: 'RESTART' }
 
 const initialData: WizardData = {
@@ -72,6 +73,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, data: { ...state.data, ...action.partial } }
     case 'UPDATE_AND_NEXT':
       return { ...state, data: { ...state.data, ...action.partial }, step: state.step + 1 }
+    case 'GO_TO_STEP':
+      return { ...state, step: action.step }
     case 'RESTART':
       return initialState
   }
@@ -88,7 +91,15 @@ export default function WizardFlow() {
   const back = useCallback(() => dispatch({ type: 'BACK' }), [])
   const updateData = useCallback((partial: Partial<WizardData>) => dispatch({ type: 'UPDATE_DATA', partial }), [])
   const selectPath = useCallback((p: WizardPath) => dispatch({ type: 'SELECT_PATH', path: p }), [])
+  const goToStep = useCallback((s: number) => dispatch({ type: 'GO_TO_STEP', step: s }), [])
   const restart = useCallback(() => dispatch({ type: 'RESTART' }), [])
+
+  useEffect(() => {
+    const roleParam = searchParams.get('role')
+    if (roleParam === 'farmer' || roleParam === 'lender') {
+      dispatch({ type: 'SELECT_PATH', path: roleParam })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (path === 'none') {
     return (
@@ -108,7 +119,7 @@ export default function WizardFlow() {
         {path === 'farmer' ? (
           <>
             {step === 0 && <WalletSetupStep onUpdate={updateData} onNext={next} />}
-            {step === 1 && <RegisterParcelStep data={data} isDemo={isDemo} onUpdate={updateData} onNext={next} onBack={back} />}
+            {step === 1 && <RegisterParcelStep data={data} isDemo={isDemo} onUpdate={updateData} onNext={next} onBack={back} onSkipToSummary={() => goToStep(4)} />}
             {step === 2 && <SatelliteStep cadastral={cad} isDemo={isDemo} onUpdate={updateData} onNext={next} />}
             {step === 3 && <CreditScoreStep cadastral={cad} isDemo={isDemo} onNext={next} />}
             {step === 4 && <SummaryStep cadastral={cad} onRestart={restart} />}

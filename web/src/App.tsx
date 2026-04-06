@@ -5,6 +5,7 @@ import { NotFound } from './pages/NotFound/NotFound'
 import { Skeleton } from './components/Skeleton/Skeleton'
 import { ToastProvider } from './components/Toast/Toast'
 
+const Landing = lazy(() => import('./pages/Landing/Landing'))
 const WizardFlow = lazy(() => import('./pages/WizardFlow/WizardFlow'))
 const ParcelDetail = lazy(() => import('./pages/ParcelDetail/ParcelDetail'))
 
@@ -19,6 +20,11 @@ function PageFallback() {
 
 const router = createBrowserRouter([
   {
+    index: true,
+    element: <Suspense fallback={<PageFallback />}><Landing /></Suspense>,
+  },
+  {
+    path: 'app',
     element: <AppLayout />,
     children: [
       { index: true, element: <Suspense fallback={<PageFallback />}><WizardFlow /></Suspense> },
@@ -26,6 +32,7 @@ const router = createBrowserRouter([
       { path: '*', element: <NotFound /> },
     ],
   },
+  { path: '*', element: <NotFound /> },
 ])
 
 export function App() {

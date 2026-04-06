@@ -12,7 +12,7 @@ interface Props {
   onNext: () => void
 }
 
-const DEMO_PARCELS = ['KZ11-0032-001', 'KZ11-0032-002', 'KZ11-0032-003']
+const DEMO_PARCELS = ['KZ11-0033-001', 'KZ11-0033-002', 'KZ11-0033-003']
 
 export function SearchParcelStep({ onUpdate, onNext }: Props) {
   const [query, setQuery] = useState('')
@@ -52,7 +52,7 @@ export function SearchParcelStep({ onUpdate, onNext }: Props) {
       <div className={styles.stepForm}>
         <Input
           label="Cadastral Number"
-          placeholder="e.g. KZ11-0032-001"
+          placeholder="e.g. KZ11-0033-001"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}

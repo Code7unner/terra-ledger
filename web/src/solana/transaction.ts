@@ -43,11 +43,18 @@ function parseTransactionError(err: unknown): string {
     }
   }
 
-  // 3. Match "custom program error: 0xNNNN"
+  // 3. Match "custom program error: 0xNNNN" with known codes
   const hexMatch = raw.match(/custom program error: 0x([0-9a-fA-F]+)/)
   if (hexMatch) {
     const code = parseInt(hexMatch[1], 16)
-    return `Program error (code ${code})`
+    const knownCodes: Record<number, string> = {
+      6000: 'Active lien already exists on this parcel (double-pledge prevented)',
+      6001: 'Parcel is not KYC verified',
+      6002: 'Only the lender can release this encumbrance',
+      6003: 'Encumbrance is not active',
+      6004: 'Lien amount must be greater than zero',
+    }
+    return knownCodes[code] ?? `Program error (code ${code})`
   }
 
   // 4. Common wallet/network errors

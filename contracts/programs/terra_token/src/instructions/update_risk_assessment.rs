@@ -30,6 +30,7 @@ pub fn handler(
 ) -> Result<()> {
     require!(ai_score <= 100, TerraTokenError::InvalidAIScore);
     require!(collateral_grade <= 3, TerraTokenError::InvalidCollateralGrade);
+    require!(recommended_ltv <= 10000, TerraTokenError::InvalidLTV);
 
     let parcel = &mut ctx.accounts.parcel_config;
     parcel.ai_score = ai_score;

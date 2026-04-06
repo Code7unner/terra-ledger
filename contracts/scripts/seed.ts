@@ -13,6 +13,8 @@ import { TerraToken } from "../target/types/terra_token";
 import { LienRegistry } from "../target/types/lien_registry";
 
 const { PublicKey, SystemProgram, Keypair } = anchor.web3;
+const TOKEN_2022_PROGRAM_ID = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
 
 // ---------------------------------------------------------------------------
 // PDA helpers (mirrors tests/helpers/setup.ts)
@@ -62,7 +64,7 @@ interface ParcelSeed {
 
 const PARCELS: ParcelSeed[] = [
   {
-    cadastral: "KZ11-0032-001",
+    cadastral: "KZ11-0033-001",
     areaHa: 4530,
     landClass: 2,
     certificates: [
@@ -72,7 +74,7 @@ const PARCELS: ParcelSeed[] = [
     ],
   },
   {
-    cadastral: "KZ11-0032-002",
+    cadastral: "KZ11-0033-002",
     areaHa: 2100,
     landClass: 1,
     certificates: [
@@ -81,7 +83,7 @@ const PARCELS: ParcelSeed[] = [
     ],
   },
   {
-    cadastral: "KZ11-0032-003",
+    cadastral: "KZ11-0033-003",
     areaHa: 8750,
     landClass: 3,
     certificates: [
@@ -91,7 +93,7 @@ const PARCELS: ParcelSeed[] = [
     ],
   },
   {
-    cadastral: "KZ11-0032-004",
+    cadastral: "KZ11-0033-004",
     areaHa: 1200,
     landClass: 5,
     certificates: [
@@ -100,7 +102,7 @@ const PARCELS: ParcelSeed[] = [
     ],
   },
   {
-    cadastral: "KZ11-0032-005",
+    cadastral: "KZ11-0033-005",
     areaHa: 6300,
     landClass: 2,
     certificates: [
@@ -201,17 +203,36 @@ async function main() {
 
     for (const cert of parcel.certificates) {
       try {
+        const certMint = Keypair.generate();
+
+        // Derive ATA for the farmer (owner) for this certificate mint
+        const [tokenAccount] = PublicKey.findProgramAddressSync(
+          [
+            farmer.publicKey.toBuffer(),
+            TOKEN_2022_PROGRAM_ID.toBuffer(),
+            certMint.publicKey.toBuffer(),
+          ],
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+        );
+
         await terraToken.methods
-          .mintCertificate(parcel.cadastral, cert.season, cert.ndviScore)
+          .mintCertificate(parcel.cadastral, cert.season, cert.ndviScore, "winter_wheat")
           .accountsStrict({
             parcelConfig: parcelPda,
+            certificateMint: certMint.publicKey,
+            tokenAccount,
+            owner: farmer.publicKey,
             mintAuthority: farmer.publicKey,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
           })
+          .signers([certMint])
           .rpc();
 
         const ndviDecimal = (cert.ndviScore / 1000).toFixed(3);
         console.log(
-          `  [OK] ${parcel.cadastral} / ${cert.season}  ndvi=${ndviDecimal}`,
+          `  [OK] ${parcel.cadastral} / ${cert.season}  ndvi=${ndviDecimal}  mint=${certMint.publicKey.toBase58().slice(0, 8)}...`,
         );
       } catch (err: any) {
         console.error(
@@ -225,7 +246,7 @@ async function main() {
   // -------------------------------------------------------------------------
   // 3. Register lien on parcel 001
   // -------------------------------------------------------------------------
-  console.log("--- Registering lien on KZ11-0032-001 ---");
+  console.log("--- Registering lien on KZ11-0033-001 ---");
   const lienCadastral = PARCELS[0].cadastral;
   const [parcelPda001] = getParcelPda(terraToken, lienCadastral);
   const [encumbrancePda] = getEncumbrancePda(
@@ -251,6 +272,7 @@ async function main() {
         parcelConfig: parcelPda001,
         lender: lender.publicKey,
         systemProgram: SystemProgram.programId,
+        terraTokenProgram: terraToken.programId,
       })
       .signers([lender])
       .rpc();

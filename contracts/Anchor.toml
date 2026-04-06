@@ -11,10 +11,12 @@ skip-lint = false
 [programs.localnet]
 terra_token = "2eAqpJ7yjso7FDA4sDQLJQioNCRuoYSUeha2Y88NRRMX"
 lien_registry = "3qYHSTPeRLRDfWmtzEhiaHpT2kchgW8GqaYcwmDbKnq4"
+transfer_hook = "CpvRLN1XUqpjPw1uHAQcPHQjgbvSF7jnaftwEghta964"
 
 [programs.devnet]
 terra_token = "2eAqpJ7yjso7FDA4sDQLJQioNCRuoYSUeha2Y88NRRMX"
 lien_registry = "3qYHSTPeRLRDfWmtzEhiaHpT2kchgW8GqaYcwmDbKnq4"
+transfer_hook = "CpvRLN1XUqpjPw1uHAQcPHQjgbvSF7jnaftwEghta964"
 
 [registry]
 url = "https://api.apr.dev"

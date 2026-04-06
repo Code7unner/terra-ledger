@@ -44,7 +44,7 @@ function ParcelMarker({ parcel }: { parcel: MapParcel }) {
           {parcel.oblast && <>Oblast: {parcel.oblast}<br /></>}
           <Link
             className={styles.popupLink}
-            to={`/parcel/${parcel.cadastral_number}`}
+            to={`/app/parcel/${parcel.cadastral_number}`}
           >
             View details
           </Link>

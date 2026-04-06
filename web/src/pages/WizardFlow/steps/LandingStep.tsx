@@ -46,7 +46,7 @@ function ParcelMarker({ parcel }: { parcel: MapParcel }) {
           Area: {parcel.area_ha} ha<br />
           Land class: {parcel.land_class}<br />
           {parcel.oblast && <>Oblast: {parcel.oblast}<br /></>}
-          <Link className={styles.mapPopupLink} to={`/parcel/${parcel.cadastral_number}`}>
+          <Link className={styles.mapPopupLink} to={`/app/parcel/${parcel.cadastral_number}`}>
             View details
           </Link>
         </div>

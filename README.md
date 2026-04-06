@@ -5,9 +5,33 @@
 Satellite-verified productivity certificates + on-chain lien registry + AI credit scoring = instant, trustworthy agricultural lending.
 
 > **Hackathon:** National Solana Hackathon by Decentrathon (April 2026, Kazakhstan)
-> **Case:** Case 1 (RWA Tokenization) + Case 2 (AI + Blockchain)
+
+> **Case:** Case 1 (RWA Tokenization)
+
 > **Live demo:** [terra-ledger.com](https://terra-ledger.com)
+
 > **Devnet programs:** [terra_token](https://explorer.solana.com/address/2eAqpJ7yjso7FDA4sDQLJQioNCRuoYSUeha2Y88NRRMX?cluster=devnet) | [lien_registry](https://explorer.solana.com/address/3qYHSTPeRLRDfWmtzEhiaHpT2kchgW8GqaYcwmDbKnq4?cluster=devnet)
+
+---
+
+## Screenshots
+
+### Credit Profile Dashboard
+NDVI chart, credit gauge, Agricultural Health Index radar, and lien history for a registered parcel.
+
+![Dashboard](docs/screenshots/dashboard-credit-profile.png)
+
+[//]: # (### AI Risk Assessment On-Chain &#40;Solana Explorer&#41;)
+
+[//]: # (The keeper bot writes AI credit scores directly on-chain via `update_risk_assessment`. Each transaction is verifiable on Solana Explorer.)
+
+[//]: # ()
+[//]: # (![Solana Explorer]&#40;docs/screenshots/solana-explorer-risk-assessment.png&#41;)
+
+### Double-Pledge Prevention (Transaction Error)
+Attempting to register a second lien on an already-encumbered parcel fails atomically on-chain with `ActiveLienExists` error.
+
+![Double Pledge Error](docs/screenshots/solana-explorer-double-pledge.png)
 
 ---
 

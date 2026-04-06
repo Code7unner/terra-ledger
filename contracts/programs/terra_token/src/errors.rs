@@ -24,4 +24,6 @@ pub enum TerraTokenError {
     InvalidAIScore,
     #[msg("Invalid collateral grade (must be 0-3)")]
     InvalidCollateralGrade,
+    #[msg("Invalid LTV (must be 0-10000 basis points)")]
+    InvalidLTV,
 }

@@ -172,7 +172,7 @@ export default function LienManagement() {
         <div className={styles.form}>
           <Input
             label="Cadastral Number"
-            placeholder="KZ11-0032-001"
+            placeholder="KZ11-0033-001"
             value={cadastral}
             onChange={(e) => setCadastral(e.target.value)}
           />

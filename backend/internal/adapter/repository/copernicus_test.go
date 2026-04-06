@@ -19,8 +19,8 @@ func TestFallbackNDVI_PerParcel(t *testing.T) {
 		cadastral string
 		wantDiff  bool
 	}{
-		{"known_parcel_001", "KZ11-0032-001", true},
-		{"known_parcel_004", "KZ11-0032-004", true},
+		{"known_parcel_001", "KZ11-0033-001", true},
+		{"known_parcel_004", "KZ11-0033-004", true},
 		{"unknown_parcel", "KZ99-9999-999", false},
 	}
 
@@ -31,7 +31,7 @@ func TestFallbackNDVI_PerParcel(t *testing.T) {
 			assert.Greater(t, ndvi, 0.0)
 			assert.LessOrEqual(t, ndvi, 1.0)
 			if tc.wantDiff {
-				other := fallbackNDVI("KZ11-0032-003")
+				other := fallbackNDVI("KZ11-0033-003")
 				assert.NotEqual(t, ndvi, other, "different parcels should have different NDVI")
 			}
 		})
@@ -86,7 +86,7 @@ func TestCopernicusClient_FetchNDVI_NoCredentials(t *testing.T) {
 	logger := zerolog.Nop()
 	c := NewCopernicusClient("", "", &logger)
 
-	ndvi, err := c.FetchNDVI(context.Background(), "KZ11-0032-001", 51.13, 69.41, "2026-03-01", "2026-04-01")
+	ndvi, err := c.FetchNDVI(context.Background(), "KZ11-0033-001", 51.13, 69.41, "2026-03-01", "2026-04-01")
 	require.NoError(t, err)
 	assert.Greater(t, ndvi, 0.0)
 }
@@ -101,7 +101,7 @@ func TestCopernicusClient_FetchNDVI_TokenFails(t *testing.T) {
 	c := NewCopernicusClient("id", "secret", &logger)
 	c.httpClient = ts.Client()
 
-	ndvi, err := c.FetchNDVI(context.Background(), "KZ11-0032-003", 51.14, 69.40, "2026-03-01", "2026-04-01")
+	ndvi, err := c.FetchNDVI(context.Background(), "KZ11-0033-003", 51.14, 69.40, "2026-03-01", "2026-04-01")
 	require.NoError(t, err)
 	assert.Greater(t, ndvi, 0.0, "should use fallback on token failure")
 }
