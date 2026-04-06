@@ -51,6 +51,9 @@ function parseTransactionError(err: unknown): string {
   }
 
   // 4. Common wallet/network errors
+  if (raw.includes('already in use')) {
+    return 'This parcel is already registered on-chain. Try a different cadastral number.'
+  }
   if (raw.includes('User rejected') || raw.includes('user rejected')) {
     return 'Transaction was rejected by the wallet'
   }
