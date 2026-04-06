@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from 'react'
+import { useReducer, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Stepper } from '../../components/Stepper/Stepper'
 import { LandingStep } from './steps/LandingStep'
@@ -89,6 +89,13 @@ export default function WizardFlow() {
   const updateData = useCallback((partial: Partial<WizardData>) => dispatch({ type: 'UPDATE_DATA', partial }), [])
   const selectPath = useCallback((p: WizardPath) => dispatch({ type: 'SELECT_PATH', path: p }), [])
   const restart = useCallback(() => dispatch({ type: 'RESTART' }), [])
+
+  useEffect(() => {
+    const roleParam = searchParams.get('role')
+    if (roleParam === 'farmer' || roleParam === 'lender') {
+      dispatch({ type: 'SELECT_PATH', path: roleParam })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (path === 'none') {
     return (

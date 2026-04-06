@@ -13,7 +13,7 @@ export function LenderDashboard() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (cadastral.trim()) {
-      navigate(`/parcel/${encodeURIComponent(cadastral.trim())}`)
+      navigate(`/app/parcel/${encodeURIComponent(cadastral.trim())}`)
     }
   }
 
