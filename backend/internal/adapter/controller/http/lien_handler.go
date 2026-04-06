@@ -46,10 +46,17 @@ func (h *LienHandler) Register(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch parcel"})
 	}
 
+	lender, _ := c.Locals("lender").(*entity.Lender)
+	lenderName := ""
+	if lender != nil {
+		lenderName = lender.Name
+	}
+
 	lien := &entity.Encumbrance{
 		ParcelID:        parcel.ID,
 		CadastralNumber: input.CadastralNumber,
 		LenderWallet:    input.LenderWallet,
+		LenderName:      lenderName,
 		AmountTenge:     input.AmountTenge,
 		NotaryCertHash:  input.NotaryCertHash,
 		Status:          entity.LienStatusActive,
