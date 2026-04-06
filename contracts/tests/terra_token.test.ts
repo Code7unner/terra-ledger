@@ -266,6 +266,98 @@ describe("terra_token", () => {
     });
   });
 
+  describe("update_risk_assessment", () => {
+    it("updates AI score on-chain when called by mint authority", async () => {
+      const [parcelPda] = getParcelPda(env.terraToken, TEST_CADASTRAL);
+
+      await env.terraToken.methods
+        .updateRiskAssessment(TEST_CADASTRAL, 85, 0, 7000) // score=85, grade=A, ltv=70%
+        .accountsStrict({
+          parcelConfig: parcelPda,
+          authority: env.farmer.publicKey, // farmer is mint_authority by default
+        })
+        .signers([env.farmer])
+        .rpc();
+
+      const parcel = await env.terraToken.account.parcelConfig.fetch(parcelPda);
+      assert.equal(parcel.aiScore, 85);
+      assert.equal(parcel.collateralGrade, 0); // A
+      assert.equal(parcel.recommendedLtv, 7000);
+      assert.equal(parcel.riskFlag, 0); // score >= 40, no risk flag
+    });
+
+    it("auto-sets risk flag when score drops below 20", async () => {
+      const [parcelPda] = getParcelPda(env.terraToken, TEST_CADASTRAL);
+
+      await env.terraToken.methods
+        .updateRiskAssessment(TEST_CADASTRAL, 15, 3, 1000) // score=15, grade=D, ltv=10%
+        .accountsStrict({
+          parcelConfig: parcelPda,
+          authority: env.farmer.publicKey,
+        })
+        .signers([env.farmer])
+        .rpc();
+
+      const parcel = await env.terraToken.account.parcelConfig.fetch(parcelPda);
+      assert.equal(parcel.aiScore, 15);
+      assert.equal(parcel.collateralGrade, 3); // D
+      assert.equal(parcel.riskFlag, 1); // auto-flagged
+    });
+
+    it("clears risk flag when score recovers above 40", async () => {
+      const [parcelPda] = getParcelPda(env.terraToken, TEST_CADASTRAL);
+
+      await env.terraToken.methods
+        .updateRiskAssessment(TEST_CADASTRAL, 65, 1, 5000) // score=65, grade=B
+        .accountsStrict({
+          parcelConfig: parcelPda,
+          authority: env.farmer.publicKey,
+        })
+        .signers([env.farmer])
+        .rpc();
+
+      const parcel = await env.terraToken.account.parcelConfig.fetch(parcelPda);
+      assert.equal(parcel.aiScore, 65);
+      assert.equal(parcel.riskFlag, 0); // cleared
+    });
+
+    it("fails when non-authority tries to update", async () => {
+      const [parcelPda] = getParcelPda(env.terraToken, TEST_CADASTRAL);
+
+      try {
+        await env.terraToken.methods
+          .updateRiskAssessment(TEST_CADASTRAL, 50, 2, 3000)
+          .accountsStrict({
+            parcelConfig: parcelPda,
+            authority: env.lender1.publicKey, // not the mint authority
+          })
+          .signers([env.lender1])
+          .rpc();
+        assert.fail("should have thrown");
+      } catch (err: any) {
+        assert.include(err.toString(), "UnauthorizedAuthority");
+      }
+    });
+
+    it("fails with invalid score > 100", async () => {
+      const [parcelPda] = getParcelPda(env.terraToken, TEST_CADASTRAL);
+
+      try {
+        await env.terraToken.methods
+          .updateRiskAssessment(TEST_CADASTRAL, 150, 0, 7000)
+          .accountsStrict({
+            parcelConfig: parcelPda,
+            authority: env.farmer.publicKey,
+          })
+          .signers([env.farmer])
+          .rpc();
+        assert.fail("should have thrown");
+      } catch (err: any) {
+        assert.include(err.toString(), "InvalidAIScore");
+      }
+    });
+  });
+
   describe("PDA derivation", () => {
     it("derives deterministic PDAs from cadastral number", () => {
       const [pda1a] = getParcelPda(env.terraToken, TEST_CADASTRAL);

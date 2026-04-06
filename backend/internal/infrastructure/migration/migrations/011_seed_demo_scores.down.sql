@@ -1,0 +1,1 @@
+DELETE FROM credit_scores WHERE cadastral_number IN ('KZ11-0032-001', 'KZ11-0032-002', 'KZ11-0032-003');

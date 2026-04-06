@@ -2,6 +2,7 @@ package http
 
 import (
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"strings"
 
@@ -18,6 +19,7 @@ var (
 	discEncumbranceRegistered = eventDiscriminator("EncumbranceRegistered")
 	discEncumbranceReleased   = eventDiscriminator("EncumbranceReleased")
 	discParcelDormant         = eventDiscriminator("ParcelDormant")
+	discRiskAssessmentUpdated = eventDiscriminator("RiskAssessmentUpdated")
 )
 
 type HeliusTransaction struct {
@@ -74,7 +76,7 @@ func NewWebhookHandler(
 
 func (h *WebhookHandler) Handle(c *fiber.Ctx) error {
 	auth := c.Get("Authorization")
-	if auth != h.secret {
+	if subtle.ConstantTimeCompare([]byte(auth), []byte(h.secret)) != 1 {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
@@ -128,6 +130,8 @@ func (h *WebhookHandler) routeEvent(c *fiber.Ctx, txn HeliusTransaction, disc [8
 		h.handleEncumbranceReleased(c, txn, data)
 	case discParcelDormant:
 		h.handleParcelDormant(c, txn, data)
+	case discRiskAssessmentUpdated:
+		h.handleRiskAssessmentUpdated(c, txn, data)
 	}
 }
 
@@ -280,6 +284,29 @@ func (h *WebhookHandler) handleParcelDormant(c *fiber.Ctx, txn HeliusTransaction
 		Uint8("seasons_dormant", seasonsDormant).
 		Msg("event: ParcelDormant — parcel has no NDVI submissions")
 	_ = c
+}
+
+// RiskAssessmentUpdated: { cadastral_number: String, ai_score: u8, grade: u8 }
+func (h *WebhookHandler) handleRiskAssessmentUpdated(_ *fiber.Ctx, txn HeliusTransaction, data []byte) {
+	cadastral, offset, err := decodeBorshString(data, 0)
+	if err != nil {
+		h.logger.Warn().Err(err).Str("sig", txn.Signature).Msg("failed to decode RiskAssessmentUpdated cadastral")
+		return
+	}
+
+	var aiScore, grade uint8
+	if offset < len(data) {
+		aiScore = data[offset]
+		offset++
+	}
+	if offset < len(data) {
+		grade = data[offset]
+	}
+
+	h.logger.Info().
+		Str("sig", txn.Signature).Str("cadastral", cadastral).
+		Uint8("ai_score", aiScore).Uint8("grade", grade).
+		Msg("event: RiskAssessmentUpdated — AI agent wrote score on-chain")
 }
 
 func eventDiscriminator(name string) [8]byte {

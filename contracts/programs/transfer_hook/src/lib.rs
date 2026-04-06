@@ -38,7 +38,12 @@ pub struct Execute<'info> {
     pub destination: UncheckedAccount<'info>,
     /// CHECK: Token-2022 passes the authority
     pub authority: UncheckedAccount<'info>,
-    /// CHECK: Extra account — parcel config for validation
+    /// CHECK: Extra account — parcel config for validation.
+    /// SECURITY NOTE: owner check confirms this is a real terra_token ParcelConfig,
+    /// but does not verify it corresponds to THIS specific mint. Certificates use
+    /// Token-2022 NonTransferable extension as the primary transfer guard; this hook
+    /// is a secondary defense. Full mint-parcel linkage requires ExtraAccountMetas
+    /// with seed derivation (post-hackathon).
     #[account(owner = terra_token::ID)]
     pub parcel_config: UncheckedAccount<'info>,
 }

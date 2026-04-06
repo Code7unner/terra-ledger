@@ -18,4 +18,10 @@ pub enum TerraTokenError {
     OwnerMismatch,
     #[msg("Failed to calculate mint account space")]
     MintSpaceCalculation,
+    #[msg("Unauthorized: signer is not mint authority")]
+    UnauthorizedAuthority,
+    #[msg("Invalid AI score (must be 0-100)")]
+    InvalidAIScore,
+    #[msg("Invalid collateral grade (must be 0-3)")]
+    InvalidCollateralGrade,
 }

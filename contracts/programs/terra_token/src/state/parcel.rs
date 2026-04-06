@@ -19,4 +19,7 @@ pub struct ParcelConfig {
     pub risk_flag: u8,
     pub registered_at: i64,
     pub bump: u8,
+    pub ai_score: u8,           // 0-100 AI credit score
+    pub collateral_grade: u8,   // 0=A, 1=B, 2=C, 3=D
+    pub recommended_ltv: u16,   // basis points: 7000 = 70.00%
 }

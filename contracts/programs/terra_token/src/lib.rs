@@ -54,4 +54,20 @@ pub mod terra_token {
     ) -> Result<()> {
         instructions::seasonal_check::handler(ctx, cadastral_number)
     }
+
+    pub fn update_risk_assessment(
+        ctx: Context<UpdateRiskAssessment>,
+        cadastral_number: String,
+        ai_score: u8,
+        collateral_grade: u8,
+        recommended_ltv: u16,
+    ) -> Result<()> {
+        instructions::update_risk_assessment::handler(
+            ctx,
+            cadastral_number,
+            ai_score,
+            collateral_grade,
+            recommended_ltv,
+        )
+    }
 }

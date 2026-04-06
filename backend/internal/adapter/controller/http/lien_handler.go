@@ -65,10 +65,20 @@ func (h *LienHandler) Register(c *fiber.Ctx) error {
 func (h *LienHandler) Release(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	if err := h.lienRepo.UpdateStatus(c.Context(), id, entity.LienStatusReleased); err != nil {
+	lien, err := h.lienRepo.GetByID(c.Context(), id)
+	if err != nil {
 		if errors.Is(err, entity.ErrNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "lien not found"})
 		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch lien"})
+	}
+
+	lender, _ := c.Locals("lender").(*entity.Lender)
+	if lender == nil || lender.Name != lien.LenderName {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "only the lien owner can release"})
+	}
+
+	if err := h.lienRepo.UpdateStatus(c.Context(), id, entity.LienStatusReleased); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to release lien"})
 	}
 

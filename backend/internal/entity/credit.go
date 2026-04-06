@@ -26,6 +26,10 @@ type ScoringInput struct {
 	LandClass       int
 	Oblast          string
 	NDVIHistory     []NDVICertificate
+	NDVITrend       string   // "improving", "declining", "stable"
+	AvgNDWI         *float64 // average NDWI across recent observations
+	AvgEVI          *float64 // average EVI across recent observations
+	WaterStressRisk bool     // true if avg NDWI indicates drought
 	ActiveLiens     int
 	TotalLiens      int
 	Disputes        int
@@ -40,9 +44,12 @@ type CreditProfile struct {
 }
 
 type ProductivityData struct {
-	Certificates []NDVICertificate `json:"certificates"`
-	NDVITrend    string            `json:"ndvi_trend"`
-	DormancyRisk string            `json:"dormancy_risk"`
+	Certificates    []NDVICertificate `json:"certificates"`
+	NDVITrend       string            `json:"ndvi_trend"`
+	NDWITrend       string            `json:"ndwi_trend,omitempty"`
+	EVITrend        string            `json:"evi_trend,omitempty"`
+	WaterStressRisk string            `json:"water_stress_risk,omitempty"`
+	DormancyRisk    string            `json:"dormancy_risk"`
 }
 
 type EncumbranceData struct {

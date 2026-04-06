@@ -161,11 +161,20 @@ type lienReleaseCase struct {
 }
 
 func lienReleaseCases() []lienReleaseCase {
+	lenderName := "Halyk Bank"
 	return []lienReleaseCase{
 		{
 			name:   "success",
 			lienID: uuid.New().String(),
 			setupMock: func(s *LienHandlerSuite, id string) {
+				s.lienRepo.EXPECT().
+					GetByID(gomock.Any(), id).
+					Return(&entity.Encumbrance{
+						ID:         uuid.MustParse(id),
+						LenderName: lenderName,
+						Status:     entity.LienStatusActive,
+					}, nil).
+					Times(1)
 				s.lienRepo.EXPECT().
 					UpdateStatus(gomock.Any(), id, entity.LienStatusReleased).
 					Return(nil).
@@ -178,8 +187,8 @@ func lienReleaseCases() []lienReleaseCase {
 			lienID: uuid.New().String(),
 			setupMock: func(s *LienHandlerSuite, id string) {
 				s.lienRepo.EXPECT().
-					UpdateStatus(gomock.Any(), id, entity.LienStatusReleased).
-					Return(entity.ErrNotFound).
+					GetByID(gomock.Any(), id).
+					Return(nil, entity.ErrNotFound).
 					Times(1)
 			},
 			expectedStatus: http.StatusNotFound,
@@ -194,6 +203,10 @@ func (s *LienHandlerSuite) TestRelease() {
 			tc.setupMock(s, tc.lienID)
 
 			app := fiber.New()
+			app.Use(func(c *fiber.Ctx) error {
+				c.Locals("lender", &entity.Lender{Name: "Halyk Bank"})
+				return c.Next()
+			})
 			app.Post("/liens/:id/release", s.handler.Release)
 
 			req := httptest.NewRequest(http.MethodPost,

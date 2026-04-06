@@ -21,6 +21,8 @@ type Parcel struct {
 	EGISSSnapshot    any        `json:"egiss_snapshot,omitempty"`
 	RegisteredAt     time.Time  `json:"registered_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
+	Latitude         *float64   `json:"latitude,omitempty"`
+	Longitude        *float64   `json:"longitude,omitempty"`
 }
 
 type RegisterParcelInput struct {

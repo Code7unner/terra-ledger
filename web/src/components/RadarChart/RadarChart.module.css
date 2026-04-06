@@ -1,0 +1,44 @@
+.container {
+  display: flex;
+  justify-content: center;
+}
+
+.svg {
+  width: 100%;
+  max-width: 240px;
+}
+
+.gridLine {
+  fill: none;
+  stroke: var(--border-primary);
+  stroke-width: 0.5;
+}
+
+.axis {
+  stroke: var(--border-primary);
+  stroke-width: 0.5;
+}
+
+.refArea {
+  fill: var(--color-primary);
+  opacity: 0.08;
+  stroke: var(--color-primary);
+  stroke-width: 0.5;
+  stroke-dasharray: 4 2;
+}
+
+.dataArea {
+  fill: var(--color-primary);
+  opacity: 0.25;
+  stroke: var(--color-primary);
+  stroke-width: 1.5;
+}
+
+.dataPoint {
+  fill: var(--color-primary);
+}
+
+.label {
+  fill: var(--text-secondary);
+  font-size: 11px;
+}

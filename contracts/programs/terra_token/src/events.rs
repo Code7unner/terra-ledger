@@ -21,3 +21,12 @@ pub struct ParcelDormant {
     pub seasons_dormant: u8,
     pub has_active_lien: bool,
 }
+
+#[event]
+pub struct RiskAssessmentUpdated {
+    pub cadastral_number: String,
+    pub ai_score: u8,
+    pub collateral_grade: u8,
+    pub recommended_ltv: u16,
+    pub risk_flag: u8,
+}

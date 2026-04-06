@@ -86,6 +86,21 @@ func (mr *MockParcelRepoMockRecorder) ListNeedingSeasonalCheck(ctx, maxAge any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNeedingSeasonalCheck", reflect.TypeOf((*MockParcelRepo)(nil).ListNeedingSeasonalCheck), ctx, maxAge)
 }
 
+// ListAll mocks base method.
+func (m *MockParcelRepo) ListAll(ctx context.Context) ([]entity.Parcel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAll", ctx)
+	ret0, _ := ret[0].([]entity.Parcel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAll indicates an expected call of ListAll.
+func (mr *MockParcelRepoMockRecorder) ListAll(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAll", reflect.TypeOf((*MockParcelRepo)(nil).ListAll), ctx)
+}
+
 // UpdateOnChainAddress mocks base method.
 func (m *MockParcelRepo) UpdateOnChainAddress(ctx context.Context, cadastral, addr string) error {
 	m.ctrl.T.Helper()
@@ -136,6 +151,35 @@ func (m *MockCertificateRepo) Create(ctx context.Context, cert *entity.NDVICerti
 func (mr *MockCertificateRepoMockRecorder) Create(ctx, cert any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCertificateRepo)(nil).Create), ctx, cert)
+}
+
+// CreateBatch mocks base method.
+func (m *MockCertificateRepo) CreateBatch(ctx context.Context, certs []entity.NDVICertificate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateBatch", ctx, certs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateBatch indicates an expected call of CreateBatch.
+func (mr *MockCertificateRepoMockRecorder) CreateBatch(ctx, certs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBatch", reflect.TypeOf((*MockCertificateRepo)(nil).CreateBatch), ctx, certs)
+}
+
+// ListByParcelInRange mocks base method.
+func (m *MockCertificateRepo) ListByParcelInRange(ctx context.Context, cadastral string, from, to time.Time) ([]entity.NDVICertificate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByParcelInRange", ctx, cadastral, from, to)
+	ret0, _ := ret[0].([]entity.NDVICertificate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByParcelInRange indicates an expected call of ListByParcelInRange.
+func (mr *MockCertificateRepoMockRecorder) ListByParcelInRange(ctx, cadastral, from, to any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByParcelInRange", reflect.TypeOf((*MockCertificateRepo)(nil).ListByParcelInRange), ctx, cadastral, from, to)
 }
 
 // GetLatest mocks base method.
@@ -219,6 +263,21 @@ func (m *MockLienRepo) FindByWalletAndCadastral(ctx context.Context, lenderWalle
 func (mr *MockLienRepoMockRecorder) FindByWalletAndCadastral(ctx, lenderWallet, cadastral any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByWalletAndCadastral", reflect.TypeOf((*MockLienRepo)(nil).FindByWalletAndCadastral), ctx, lenderWallet, cadastral)
+}
+
+// GetByID mocks base method.
+func (m *MockLienRepo) GetByID(ctx context.Context, id string) (*entity.Encumbrance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByID", ctx, id)
+	ret0, _ := ret[0].(*entity.Encumbrance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID.
+func (mr *MockLienRepoMockRecorder) GetByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockLienRepo)(nil).GetByID), ctx, id)
 }
 
 // GetActive mocks base method.
@@ -492,6 +551,60 @@ func (m *MockNDVIProvider) FetchNDVI(ctx context.Context, cadastral string, lat,
 func (mr *MockNDVIProviderMockRecorder) FetchNDVI(ctx, cadastral, lat, lon, startDate, endDate any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNDVI", reflect.TypeOf((*MockNDVIProvider)(nil).FetchNDVI), ctx, cadastral, lat, lon, startDate, endDate)
+}
+
+// MockSatelliteProvider is a mock of SatelliteProvider interface.
+type MockSatelliteProvider struct {
+	ctrl     *gomock.Controller
+	recorder *MockSatelliteProviderMockRecorder
+	isgomock struct{}
+}
+
+// MockSatelliteProviderMockRecorder is the mock recorder for MockSatelliteProvider.
+type MockSatelliteProviderMockRecorder struct {
+	mock *MockSatelliteProvider
+}
+
+// NewMockSatelliteProvider creates a new mock instance.
+func NewMockSatelliteProvider(ctrl *gomock.Controller) *MockSatelliteProvider {
+	mock := &MockSatelliteProvider{ctrl: ctrl}
+	mock.recorder = &MockSatelliteProviderMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockSatelliteProvider) EXPECT() *MockSatelliteProviderMockRecorder {
+	return m.recorder
+}
+
+// FetchNDVI mocks base method.
+func (m *MockSatelliteProvider) FetchNDVI(ctx context.Context, cadastral string, lat, lon float64, startDate, endDate string) (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNDVI", ctx, cadastral, lat, lon, startDate, endDate)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNDVI indicates an expected call of FetchNDVI.
+func (mr *MockSatelliteProviderMockRecorder) FetchNDVI(ctx, cadastral, lat, lon, startDate, endDate any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNDVI", reflect.TypeOf((*MockSatelliteProvider)(nil).FetchNDVI), ctx, cadastral, lat, lon, startDate, endDate)
+}
+
+// FetchTimeSeries mocks base method.
+func (m *MockSatelliteProvider) FetchTimeSeries(ctx context.Context, cadastral string, lat, lon float64, startDate, endDate string) (*entity.SatelliteTimeSeries, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchTimeSeries", ctx, cadastral, lat, lon, startDate, endDate)
+	ret0, _ := ret[0].(*entity.SatelliteTimeSeries)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchTimeSeries indicates an expected call of FetchTimeSeries.
+func (mr *MockSatelliteProviderMockRecorder) FetchTimeSeries(ctx, cadastral, lat, lon, startDate, endDate any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchTimeSeries", reflect.TypeOf((*MockSatelliteProvider)(nil).FetchTimeSeries), ctx, cadastral, lat, lon, startDate, endDate)
 }
 
 // MockEGISSOracle is a mock of EGISSOracle interface.
