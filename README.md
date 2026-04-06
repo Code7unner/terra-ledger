@@ -14,27 +14,6 @@ Satellite-verified productivity certificates + on-chain lien registry + AI credi
 
 ---
 
-## Screenshots
-
-### Credit Profile Dashboard
-NDVI chart, credit gauge, Agricultural Health Index radar, and lien history for a registered parcel.
-
-![Dashboard](docs/screenshots/dashboard-credit-profile.png)
-
-[//]: # (### AI Risk Assessment On-Chain &#40;Solana Explorer&#41;)
-
-[//]: # (The keeper bot writes AI credit scores directly on-chain via `update_risk_assessment`. Each transaction is verifiable on Solana Explorer.)
-
-[//]: # ()
-[//]: # (![Solana Explorer]&#40;docs/screenshots/solana-explorer-risk-assessment.png&#41;)
-
-### Double-Pledge Prevention (Transaction Error)
-Attempting to register a second lien on an already-encumbered parcel fails atomically on-chain with `ActiveLienExists` error.
-
-![Double Pledge Error](docs/screenshots/solana-explorer-double-pledge.png)
-
----
-
 ## The Problem
 
 Kazakhstan's agricultural sector produces 4.5% of GDP but receives only 2.3% of total bank lending, a structural credit gap of **1.2 trillion tenge (~$2.7B)**. Banks reject **67% of agricultural loan applications** because they cannot verify land collateral quality and cleanliness:
@@ -206,6 +185,27 @@ The frontend reads on-chain state directly via `@solana/kit` (not through the ba
 - **Seasonal checks** run via keeper bot every configurable interval. With Copernicus's free tier (10,000 requests/month), the system can monitor ~2,500 parcels with quarterly checks.
 - **Composability** — Other Solana programs can read `ai_score` from `ParcelConfig` via CPI, enabling DeFi lending protocols to use TerraLedger as a credit oracle without any API dependency.
 - **Multi-country expansion** — The cadastral number is a generic string seed. The system works for any country's land registry format.
+
+---
+
+## Screenshots
+
+### Credit Profile Dashboard
+NDVI chart, credit gauge, Agricultural Health Index radar, and lien history for a registered parcel.
+
+![Dashboard](docs/screenshots/dashboard-credit-profile.png)
+
+[//]: # (### AI Risk Assessment On-Chain &#40;Solana Explorer&#41;)
+
+[//]: # (The keeper bot writes AI credit scores directly on-chain via `update_risk_assessment`. Each transaction is verifiable on Solana Explorer.)
+
+[//]: # ()
+[//]: # (![Solana Explorer]&#40;docs/screenshots/solana-explorer-risk-assessment.png&#41;)
+
+### Double-Pledge Prevention (Transaction Error)
+Attempting to register a second lien on an already-encumbered parcel fails atomically on-chain with `ActiveLienExists` error.
+
+![Double Pledge Error](docs/screenshots/solana-explorer-double-pledge.png)
 
 ---
 

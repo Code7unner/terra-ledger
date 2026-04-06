@@ -1,7 +1,9 @@
 package http
 
 import (
+	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,6 +25,7 @@ type CreditHandler struct {
 	scorer      repository.CreditScorer
 	ndviUseCase *ndvi.UseCase
 	logger      *zerolog.Logger
+	inflight    sync.Map // cadastral → struct{}: dedup background goroutines
 }
 
 func NewCreditHandler(
@@ -130,13 +133,24 @@ func (h *CreditHandler) buildFullProfile(
 ) entity.CreditProfile {
 	certs, _ := h.certRepo.ListByParcel(c.Context(), cadastral)
 
-	// Auto-fetch satellite data if DB has no certificates
+	// If no certs in DB, kick off background fetch + scoring and return partial profile.
+	// Frontend retries and will get the full profile once background work completes.
 	if len(certs) == 0 && h.ndviUseCase != nil && h.certRepo != nil {
-		fetched, err := h.ndviUseCase.FetchAndStoreSeries(c.Context(), *parcel, 12, h.certRepo)
-		if err != nil {
-			h.logger.Warn().Err(err).Str("cadastral", cadastral).Msg("auto-fetch satellite data failed")
-		} else if len(fetched) > 0 {
-			certs = fetched
+		h.backgroundComputeScore(cadastral, *parcel)
+
+		liens, _ := h.lienRepo.ListByParcel(c.Context(), cadastral)
+		return entity.CreditProfile{
+			Parcel: *parcel,
+			Productivity: entity.ProductivityData{
+				NDVITrend:    "computing",
+				DormancyRisk: "unknown",
+			},
+			Encumbrances: entity.EncumbranceData{
+				ActiveLiens:         filterActiveLiens(liens),
+				LienCountHistorical: len(liens),
+				DoublePledgeRisk:    len(filterActiveLiens(liens)) > 0,
+			},
+			// Credit is nil — frontend will retry
 		}
 	}
 
@@ -235,6 +249,44 @@ func (h *CreditHandler) resolveScore(
 		h.logger.Error().Err(err).Str("cadastral", cadastral).Msg("failed to cache credit score")
 	}
 	return fresh
+}
+
+// backgroundComputeScore fetches satellite data and computes AI score in a goroutine.
+// Results are persisted to DB so the next /profile request returns them from cache.
+// Uses sync.Map for dedup — concurrent retries for the same cadastral don't spawn extra goroutines.
+func (h *CreditHandler) backgroundComputeScore(cadastral string, parcel entity.Parcel) {
+	if _, loaded := h.inflight.LoadOrStore(cadastral, struct{}{}); loaded {
+		return // already computing
+	}
+
+	go func() {
+		defer h.inflight.Delete(cadastral)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+		defer cancel()
+
+		certs, err := h.ndviUseCase.FetchAndStoreSeries(ctx, parcel, 12, h.certRepo)
+		if err != nil {
+			h.logger.Warn().Err(err).Str("cadastral", cadastral).Msg("background satellite fetch failed")
+		}
+
+		liens, _ := h.lienRepo.ListByParcel(ctx, cadastral)
+		activeLiens := filterActiveLiens(liens)
+
+		if h.scorer != nil {
+			input := buildScoringInput(&parcel, certs, activeLiens, liens)
+			score, err := h.scorer.ComputeScore(ctx, input)
+			if err != nil {
+				h.logger.Warn().Err(err).Str("cadastral", cadastral).Msg("background scoring failed")
+				return
+			}
+			if score != nil {
+				score.ParcelID = parcel.ID
+				_ = h.scoreRepo.Upsert(ctx, score)
+				h.logger.Info().Str("cadastral", cadastral).Int("score", score.AIScore).Msg("background score computed")
+			}
+		}
+	}()
 }
 
 func buildScoringInput(
