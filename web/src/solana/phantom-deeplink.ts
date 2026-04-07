@@ -95,7 +95,6 @@ export function buildSignTransactionUrl(
   const payload = JSON.stringify({
     transaction: transactionB58,
     session: sessionToken,
-    sendOptions: { preflightCommitment: 'confirmed' },
   })
 
   const nonce = nacl.randomBytes(24)
@@ -112,20 +111,19 @@ export function buildSignTransactionUrl(
     payload: b58encode(encrypted),
   })
 
-  // Use signAndSendTransaction — Phantom submits the tx itself
-  return `https://phantom.app/ul/v1/signAndSendTransaction?${params.toString()}`
+  return `https://phantom.app/ul/v1/signTransaction?${params.toString()}`
 }
 
 /**
- * Decrypt the Phantom signAndSendTransaction response.
- * Returns the transaction signature.
+ * Decrypt the Phantom signTransaction response.
+ * Returns the signed transaction as base58.
  */
 export function decryptSignResponse(
   phantomPubKeyB58: string,
   nonceB58: string,
   dataB58: string,
   dappKeyPair: DappKeyPair,
-): { signature: string } {
+): { transaction: string } {
   const phantomPubKey = b58decode(phantomPubKeyB58)
   const nonce = b58decode(nonceB58)
   const encryptedData = b58decode(dataB58)
@@ -138,7 +136,7 @@ export function decryptSignResponse(
   }
 
   const json = JSON.parse(new TextDecoder().decode(decrypted))
-  return { signature: json.signature }
+  return { transaction: json.transaction }
 }
 
 export function decryptConnectResponse(
