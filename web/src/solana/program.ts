@@ -6,6 +6,7 @@ import {
   getProgramDerivedAddress,
   getAddressEncoder,
   getBase58Decoder,
+  getBase58Encoder,
   createSolanaRpc,
   pipe,
   createTransactionMessage,
@@ -364,4 +365,30 @@ export async function serializeTransactionB58(
   const txBytes = txEncoder.encode(compiledTx)
 
   return b58Decoder.decode(txBytes)
+}
+
+/**
+ * Submit a signed transaction (base58) to the cluster and return the signature.
+ */
+export async function submitSignedTransaction(signedTxB58: string): Promise<string> {
+  const txBytes = new Uint8Array(getBase58Encoder().encode(signedTxB58))
+  const base64Tx = btoa(String.fromCharCode(...txBytes))
+
+  const resp = await fetch(RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'sendTransaction',
+      params: [base64Tx, { encoding: 'base64', preflightCommitment: 'confirmed' }],
+    }),
+  })
+
+  const data = await resp.json()
+  if (data.error) {
+    throw new Error(data.error.message || 'Failed to send transaction')
+  }
+
+  return data.result as string
 }

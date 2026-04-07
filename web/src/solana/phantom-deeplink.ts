@@ -75,7 +75,11 @@ export function buildConnectUrl(
 /**
  * Build a Phantom deeplink signAndSendTransaction URL.
  */
-export function buildSignAndSendUrl(
+/**
+ * Build a Phantom deeplink signTransaction URL.
+ * Phantom signs the transaction and returns it via callback (does NOT submit).
+ */
+export function buildSignTransactionUrl(
   dappKeyPair: DappKeyPair,
   sessionToken: string,
   phantomPubKeyB58: string,
@@ -107,19 +111,19 @@ export function buildSignAndSendUrl(
     payload: b58encode(encrypted),
   })
 
-  return `https://phantom.app/ul/v1/signAndSendTransaction?${params.toString()}`
+  return `https://phantom.app/ul/v1/signTransaction?${params.toString()}`
 }
 
 /**
- * Decrypt the Phantom signAndSendTransaction response.
- * Returns the transaction signature.
+ * Decrypt the Phantom signTransaction response.
+ * Returns the signed transaction as base58.
  */
 export function decryptSignResponse(
   phantomPubKeyB58: string,
   nonceB58: string,
   dataB58: string,
   dappKeyPair: DappKeyPair,
-): { signature: string } {
+): { transaction: string } {
   const phantomPubKey = b58decode(phantomPubKeyB58)
   const nonce = b58decode(nonceB58)
   const encryptedData = b58decode(dataB58)
@@ -132,7 +136,7 @@ export function decryptSignResponse(
   }
 
   const json = JSON.parse(new TextDecoder().decode(decrypted))
-  return { signature: json.signature }
+  return { transaction: json.transaction }
 }
 
 export function decryptConnectResponse(

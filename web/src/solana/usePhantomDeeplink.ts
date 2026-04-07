@@ -4,9 +4,10 @@ import {
   getDappKeyPair,
   buildConnectUrl,
   decryptConnectResponse,
-  buildSignAndSendUrl,
+  buildSignTransactionUrl,
   decryptSignResponse,
 } from './phantom-deeplink'
+import { submitSignedTransaction } from './program'
 
 type DeeplinkStatus = 'idle' | 'waiting' | 'connected' | 'error'
 
@@ -154,7 +155,7 @@ export function usePhantomDeeplink() {
 
       // 2. Build deeplink URL and show as QR
       const dappKeyPair = getDappKeyPair()
-      const url = buildSignAndSendUrl(dappKeyPair, session, phantomPubKey, transactionB58, session_id)
+      const url = buildSignTransactionUrl(dappKeyPair, session, phantomPubKey, transactionB58, session_id)
       setSignQrUrl(url)
       setSignStatus('waiting')
 
@@ -191,11 +192,13 @@ export function usePhantomDeeplink() {
                   resp.data,
                   dappKeyPair,
                 )
+                // Submit the signed transaction to devnet ourselves
+                const signature = await submitSignedTransaction(result.transaction)
                 setSignStatus('done')
-                resolve(result.signature)
+                resolve(signature)
               } catch {
                 setSignStatus('error')
-                reject(new Error('Failed to decrypt sign response'))
+                reject(new Error('Failed to submit signed transaction'))
               }
               return
             }
