@@ -343,7 +343,8 @@ export async function serializeTransactionB58(
   feePayer: Address,
 ): Promise<string> {
   // Use @solana/web3.js for serialization — Phantom deeplink expects this format
-  const { Connection, Transaction, PublicKey, TransactionInstruction } = await import('@solana/web3.js')
+  const web3 = await import('@solana/web3.js')
+  const { Connection, Transaction, PublicKey, TransactionInstruction } = web3
   const connection = new Connection(RPC_URL, 'confirmed')
   const { blockhash } = await connection.getLatestBlockhash('confirmed')
 
@@ -359,7 +360,7 @@ export async function serializeTransactionB58(
         isSigner: a.role === AccountRole.WRITABLE_SIGNER || a.role === AccountRole.READONLY_SIGNER,
         isWritable: a.role === AccountRole.WRITABLE || a.role === AccountRole.WRITABLE_SIGNER,
       })),
-      data: Buffer.from(ix.data ?? new Uint8Array()),
+      data: ix.data ? (ix.data as unknown as Buffer) : (new Uint8Array() as unknown as Buffer),
     }))
   }
 
@@ -378,7 +379,7 @@ export async function submitSignedTransaction(signedTxB58: string): Promise<stri
   const { Connection } = await import('@solana/web3.js')
   const connection = new Connection(RPC_URL, 'confirmed')
 
-  const txBytes = Buffer.from(getBase58Encoder().encode(signedTxB58))
+  const txBytes = new Uint8Array(getBase58Encoder().encode(signedTxB58))
   const signature = await connection.sendRawTransaction(txBytes, {
     preflightCommitment: 'confirmed',
   })
