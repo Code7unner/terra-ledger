@@ -7,7 +7,6 @@ import {
   buildSignTransactionUrl,
   decryptSignResponse,
 } from './phantom-deeplink'
-import { submitSignedTransaction } from './program'
 
 type DeeplinkStatus = 'idle' | 'waiting' | 'connected' | 'error'
 
@@ -192,13 +191,11 @@ export function usePhantomDeeplink() {
                   resp.data,
                   dappKeyPair,
                 )
-                // Submit the signed transaction to devnet ourselves
-                const signature = await submitSignedTransaction(result.transaction)
                 setSignStatus('done')
-                resolve(signature)
+                resolve(result.signature)
               } catch {
                 setSignStatus('error')
-                reject(new Error('Failed to submit signed transaction'))
+                reject(new Error('Failed to decrypt sign response'))
               }
               return
             }
