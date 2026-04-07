@@ -49,7 +49,7 @@ function parseTransactionError(err: unknown): string {
     const code = parseInt(hexMatch[1], 16)
     const knownCodes: Record<number, string> = {
       0: raw.includes('encumbrance') || raw.includes('lien') || raw.includes('3qYHSTPeRLRD')
-        ? 'Lien already registered for this parcel by your wallet'
+        ? 'Lien already registered for this parcel'
         : 'This account already exists on-chain',
       6000: 'Active lien already exists on this parcel (double-pledge prevented)',
       6001: 'Parcel is not KYC verified',
@@ -63,7 +63,7 @@ function parseTransactionError(err: unknown): string {
   // 4. Common wallet/network errors
   if (raw.includes('already in use')) {
     if (raw.includes('3qYHSTPeRLRD') || raw.includes('RegisterEncumbrance')) {
-      return 'Lien already registered for this parcel by your wallet'
+      return 'Lien already registered for this parcel'
     }
     return 'This account already exists on-chain'
   }
