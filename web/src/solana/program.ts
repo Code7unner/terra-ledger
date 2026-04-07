@@ -7,14 +7,6 @@ import {
   getAddressEncoder,
   getBase58Decoder,
   getBase58Encoder,
-  createSolanaRpc,
-  pipe,
-  createTransactionMessage,
-  setTransactionMessageLifetimeUsingBlockhash,
-  setTransactionMessageFeePayer,
-  appendTransactionMessageInstructions,
-  compileTransaction,
-  getTransactionEncoder,
 } from '@solana/kit'
 
 // ---------------------------------------------------------------------------
@@ -344,51 +336,52 @@ const b58Decoder = getBase58Decoder()
 
 /**
  * Build a fully serialized (unsigned) transaction as base58 string.
- * Used for Phantom deeplink signing where the wallet signs externally.
+ * Uses @solana/web3.js for Phantom deeplink compatibility.
  */
 export async function serializeTransactionB58(
   instructions: Instruction[],
   feePayer: Address,
 ): Promise<string> {
-  const rpc = createSolanaRpc(RPC_URL)
-  const { value } = await rpc.getLatestBlockhash({ commitment: 'confirmed' }).send()
+  // Use @solana/web3.js for serialization — Phantom deeplink expects this format
+  const { Connection, Transaction, PublicKey, TransactionInstruction } = await import('@solana/web3.js')
+  const connection = new Connection(RPC_URL, 'confirmed')
+  const { blockhash } = await connection.getLatestBlockhash('confirmed')
 
-  const txMessage = pipe(
-    createTransactionMessage({ version: 0 }),
-    (msg) => setTransactionMessageFeePayer(feePayer, msg),
-    (msg) => setTransactionMessageLifetimeUsingBlockhash(value, msg),
-    (msg) => appendTransactionMessageInstructions(instructions, msg),
-  )
+  const tx = new Transaction()
+  tx.recentBlockhash = blockhash
+  tx.feePayer = new PublicKey(feePayer)
 
-  const compiledTx = compileTransaction(txMessage)
-  const txEncoder = getTransactionEncoder()
-  const txBytes = txEncoder.encode(compiledTx)
+  for (const ix of instructions) {
+    tx.add(new TransactionInstruction({
+      programId: new PublicKey(ix.programAddress),
+      keys: (ix.accounts ?? []).map((a) => ({
+        pubkey: new PublicKey(a.address),
+        isSigner: a.role === AccountRole.WRITABLE_SIGNER || a.role === AccountRole.READONLY_SIGNER,
+        isWritable: a.role === AccountRole.WRITABLE || a.role === AccountRole.WRITABLE_SIGNER,
+      })),
+      data: Buffer.from(ix.data ?? new Uint8Array()),
+    }))
+  }
 
-  return b58Decoder.decode(txBytes)
+  const serialized = tx.serialize({ requireAllSignatures: false })
+  return bs58Encode(serialized)
+}
+
+function bs58Encode(bytes: Uint8Array): string {
+  return b58Decoder.decode(bytes)
 }
 
 /**
  * Submit a signed transaction (base58) to the cluster and return the signature.
  */
 export async function submitSignedTransaction(signedTxB58: string): Promise<string> {
-  const txBytes = new Uint8Array(getBase58Encoder().encode(signedTxB58))
-  const base64Tx = btoa(String.fromCharCode(...txBytes))
+  const { Connection } = await import('@solana/web3.js')
+  const connection = new Connection(RPC_URL, 'confirmed')
 
-  const resp = await fetch(RPC_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'sendTransaction',
-      params: [base64Tx, { encoding: 'base64', preflightCommitment: 'confirmed' }],
-    }),
+  const txBytes = Buffer.from(getBase58Encoder().encode(signedTxB58))
+  const signature = await connection.sendRawTransaction(txBytes, {
+    preflightCommitment: 'confirmed',
   })
 
-  const data = await resp.json()
-  if (data.error) {
-    throw new Error(data.error.message || 'Failed to send transaction')
-  }
-
-  return data.result as string
+  return signature
 }
