@@ -48,7 +48,7 @@ const LAND_CLASS_OPTIONS = [
 
 export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onSkipToSummary }: Props) {
   const { signAndSend, connected, walletAddress: extensionWallet, txStatus } = useSignAndSend()
-  const { signAndSendTransaction: deeplinkSign, walletAddress: deeplinkWallet } = usePhantomDeeplink()
+  const { signAndSendTransaction: deeplinkSign, signQrUrl, signStatus, walletAddress: deeplinkWallet } = usePhantomDeeplink()
   const { registerParcel } = useParcel()
   const { toast } = useToast()
 
@@ -219,12 +219,30 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onS
 
         {error && <p className={styles.error}>{error}</p>}
 
+        {signQrUrl && signStatus === 'waiting' && (
+          <div className={styles.walletHelp}>
+            <p className={styles.stepHint}>Scan with <strong>Phantom</strong> to sign the transaction:</p>
+            <div className={styles.qrPlaceholder}>
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=141414&color=ededed&data=${encodeURIComponent(signQrUrl)}`}
+                alt="Sign transaction with Phantom"
+                width={250}
+                height={250}
+              />
+            </div>
+            <div className={styles.loadingAnim}>
+              <div className={styles.spinner} />
+              <p className={styles.loadingMsg}>Waiting for signature...</p>
+            </div>
+          </div>
+        )}
+
         <div className={styles.stepActions}>
           <Button variant="secondary" onClick={onBack}>
             Back
           </Button>
           <Button
-            loading={submitting || txStatus === 'signing' || txStatus === 'confirming'}
+            loading={submitting || txStatus === 'signing' || txStatus === 'confirming' || signStatus === 'waiting'}
             onClick={handleSubmit}
           >
             Register Parcel

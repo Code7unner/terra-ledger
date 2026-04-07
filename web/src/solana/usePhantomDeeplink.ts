@@ -27,9 +27,11 @@ interface PollResponse {
 }
 
 export function usePhantomDeeplink() {
-  const [status, setStatus] = useState<DeeplinkStatus>('idle')
+  // Restore from localStorage if previously connected
+  const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('phantom_deeplink_wallet') : null
+  const [status, setStatus] = useState<DeeplinkStatus>(storedWallet ? 'connected' : 'idle')
   const [qrUrl, setQrUrl] = useState<string | null>(null)
-  const [walletAddress, setWalletAddress] = useState<string | null>(null)
+  const [walletAddress, setWalletAddress] = useState<string | null>(storedWallet)
   const [error, setError] = useState<string | null>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
@@ -115,49 +117,55 @@ export function usePhantomDeeplink() {
     }
   }, [stopPolling])
 
+  const [signQrUrl, setSignQrUrl] = useState<string | null>(null)
+  const [signStatus, setSignStatus] = useState<'idle' | 'waiting' | 'done' | 'error'>('idle')
+  const signPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const stopSignPolling = useCallback(() => {
+    if (signPollRef.current) {
+      clearInterval(signPollRef.current)
+      signPollRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => stopSignPolling()
+  }, [stopSignPolling])
+
   /**
    * Sign and send a serialized transaction via Phantom deeplink.
-   * Opens Phantom on mobile, user approves, tx is submitted by Phantom,
-   * callback stores signature, we poll and return it.
+   * Shows a QR code for the user to scan with Phantom mobile,
+   * polls for the signature, and returns it.
    */
   const signAndSendTransaction = useCallback(
     async (transactionB58: string): Promise<string> => {
       const session = localStorage.getItem('phantom_deeplink_session')
-      const storedWallet = localStorage.getItem('phantom_deeplink_wallet')
-      if (!session || !storedWallet) {
+      if (!session) {
         throw new Error('Phantom deeplink not connected. Please reconnect wallet.')
       }
 
-      // 1. Create a sign relay session on backend
-      const { session_id } = await post<SessionResponse>('/api/v1/phantom/sign-session', {})
-
-      // 2. Build deeplink URL
-      const dappKeyPair = getDappKeyPair()
-      // We need the phantom encryption public key — stored during connect
-      // Actually for signAndSendTransaction, Phantom uses the same shared secret from connect
-      // The phantomPubKey was used during connect decrypt — we need to store it
       const phantomPubKey = localStorage.getItem('phantom_deeplink_pubkey')
       if (!phantomPubKey) {
         throw new Error('Missing Phantom encryption key. Please reconnect wallet.')
       }
 
-      const url = buildSignAndSendUrl(
-        dappKeyPair,
-        session,
-        phantomPubKey,
-        transactionB58,
-        session_id,
-      )
+      // 1. Create sign relay session
+      const { session_id } = await post<SessionResponse>('/api/v1/phantom/sign-session', {})
 
-      // 3. Open deeplink
-      window.open(url, '_blank')
+      // 2. Build deeplink URL and show as QR
+      const dappKeyPair = getDappKeyPair()
+      const url = buildSignAndSendUrl(dappKeyPair, session, phantomPubKey, transactionB58, session_id)
+      setSignQrUrl(url)
+      setSignStatus('waiting')
 
-      // 4. Poll for result
+      // 3. Poll for result
       return new Promise<string>((resolve, reject) => {
         const start = Date.now()
-        const interval = setInterval(async () => {
+        signPollRef.current = setInterval(async () => {
           if (Date.now() - start > MAX_POLL_TIME) {
-            clearInterval(interval)
+            stopSignPolling()
+            setSignStatus('error')
+            setSignQrUrl(null)
             reject(new Error('Transaction signing timed out'))
             return
           }
@@ -166,36 +174,41 @@ export function usePhantomDeeplink() {
             const resp = await get<PollResponse>(`/api/v1/phantom/poll/${session_id}`)
             if (resp.status === 'pending') return
 
-            clearInterval(interval)
+            stopSignPolling()
+            setSignQrUrl(null)
 
             if (resp.status === 'error') {
+              setSignStatus('error')
               reject(new Error(resp.error_message || 'Transaction rejected'))
               return
             }
 
-            if (resp.status === 'connected' && resp.nonce && resp.data) {
+            if (resp.nonce && resp.data && resp.phantom_encryption_public_key) {
               try {
                 const result = decryptSignResponse(
-                  resp.phantom_encryption_public_key!,
+                  resp.phantom_encryption_public_key,
                   resp.nonce,
                   resp.data,
                   dappKeyPair,
                 )
+                setSignStatus('done')
                 resolve(result.signature)
-              } catch (err) {
+              } catch {
+                setSignStatus('error')
                 reject(new Error('Failed to decrypt sign response'))
               }
               return
             }
 
+            setSignStatus('error')
             reject(new Error('Unexpected response from Phantom'))
           } catch {
-            // Network error during poll — keep trying
+            // Network error — keep trying
           }
         }, POLL_INTERVAL)
       })
     },
-    [],
+    [stopSignPolling],
   )
 
   const disconnect = useCallback(() => {
@@ -212,6 +225,8 @@ export function usePhantomDeeplink() {
   return {
     connectViaQR,
     signAndSendTransaction,
+    signQrUrl,
+    signStatus,
     qrUrl,
     status,
     walletAddress,

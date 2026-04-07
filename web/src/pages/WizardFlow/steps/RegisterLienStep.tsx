@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Address } from '@solana/kit'
 import { useSignAndSend } from '../../../solana/transaction'
 import { usePhantomDeeplink } from '../../../solana/usePhantomDeeplink'
-import { buildRegisterEncumbranceInstruction, getParcelPda } from '../../../solana/program'
+import { buildRegisterEncumbranceInstruction, getParcelPda, serializeTransactionB58 } from '../../../solana/program'
 import { useLien } from '../../../hooks/useLien'
 import { useToast } from '../../../components/Toast/useToast'
 import { Button } from '../../../components/Button/Button'
@@ -19,7 +19,7 @@ const QR_API = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor
 
 export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
   const { signAndSend, connected: extensionConnected, walletAddress: extensionWallet, txStatus } = useSignAndSend()
-  const { connectViaQR, qrUrl, status: deeplinkStatus, walletAddress: deeplinkWallet } = usePhantomDeeplink()
+  const { connectViaQR, signAndSendTransaction: deeplinkSign, signQrUrl, signStatus, qrUrl, status: deeplinkStatus, walletAddress: deeplinkWallet } = usePhantomDeeplink()
   const { registerLien } = useLien()
   const { toast } = useToast()
 
@@ -133,7 +133,7 @@ export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
     setSubmitting(true)
 
     try {
-      if (extensionConnected && extensionWallet) {
+      if (walletAddress) {
         const [parcelPda] = await getParcelPda(cadastral)
         const notarySigHash = new Uint8Array(32)
         const notaryCertHash = new Uint8Array(32)
@@ -145,14 +145,20 @@ export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
         }
 
         const ix = await buildRegisterEncumbranceInstruction(
-          extensionWallet as Address,
+          walletAddress as Address,
           parcelPda,
           cadastral,
           BigInt(amountNum),
           notarySigHash,
           notaryCertHash,
         )
-        await signAndSend([ix])
+
+        if (extensionConnected && extensionWallet) {
+          await signAndSend([ix])
+        } else {
+          const txB58 = await serializeTransactionB58([ix], walletAddress as Address)
+          await deeplinkSign(txB58)
+        }
       }
 
       await registerLien({
@@ -198,10 +204,28 @@ export function RegisterLienStep({ cadastral, onBack, onDone }: Props) {
 
         {error && <p className={styles.error}>{error}</p>}
 
+        {signQrUrl && signStatus === 'waiting' && (
+          <div className={styles.walletHelp}>
+            <p className={styles.stepHint}>Scan with <strong>Phantom</strong> to sign:</p>
+            <div className={styles.qrPlaceholder}>
+              <img
+                src={`${QR_API}${encodeURIComponent(signQrUrl)}`}
+                alt="Sign transaction"
+                width={250}
+                height={250}
+              />
+            </div>
+            <div className={styles.loadingAnim}>
+              <div className={styles.spinner} />
+              <p className={styles.loadingMsg}>Waiting for signature...</p>
+            </div>
+          </div>
+        )}
+
         <div className={styles.stepActions}>
           <Button variant="secondary" onClick={onBack}>Back</Button>
           <Button
-            loading={submitting || txStatus === 'signing' || txStatus === 'confirming'}
+            loading={submitting || txStatus === 'signing' || txStatus === 'confirming' || signStatus === 'waiting'}
             onClick={handleSubmit}
           >
             Register Lien
