@@ -125,16 +125,20 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onS
         return
       }
 
-      await registerParcel({
-        cadastral_number: cadastral,
-        owner_wallet: walletAddress || 'demo-wallet',
-        area_ha: areaHa,
-        land_class: landClass,
-        oblast,
-        rayon: '',
-        holder_name: '',
-        holder_iin_hash: '',
-      })
+      try {
+        await registerParcel({
+          cadastral_number: cadastral,
+          owner_wallet: walletAddress || 'demo-wallet',
+          area_ha: areaHa,
+          land_class: landClass,
+          oblast,
+          rayon: '',
+          holder_name: '',
+          holder_iin_hash: '',
+        })
+      } catch {
+        // Parcel may already exist in DB — not a blocking error
+      }
 
       // Auto-grant consent so credit scoring works
       if (walletAddress) {
