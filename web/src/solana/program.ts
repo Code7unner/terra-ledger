@@ -5,6 +5,15 @@ import {
   type Instruction,
   getProgramDerivedAddress,
   getAddressEncoder,
+  getBase58Decoder,
+  createSolanaRpc,
+  pipe,
+  createTransactionMessage,
+  setTransactionMessageLifetimeUsingBlockhash,
+  setTransactionMessageFeePayer,
+  appendTransactionMessageInstructions,
+  compileTransaction,
+  getTransactionEncoder,
 } from '@solana/kit'
 
 // ---------------------------------------------------------------------------
@@ -324,4 +333,35 @@ export async function buildReleaseEncumbranceInstruction(
     ],
     data,
   }
+}
+
+// ---------------------------------------------------------------------------
+// Transaction serialization for Phantom deeplink signing
+// ---------------------------------------------------------------------------
+
+const b58Decoder = getBase58Decoder()
+
+/**
+ * Build a fully serialized (unsigned) transaction as base58 string.
+ * Used for Phantom deeplink signing where the wallet signs externally.
+ */
+export async function serializeTransactionB58(
+  instructions: Instruction[],
+  feePayer: Address,
+): Promise<string> {
+  const rpc = createSolanaRpc(RPC_URL)
+  const { value } = await rpc.getLatestBlockhash({ commitment: 'confirmed' }).send()
+
+  const txMessage = pipe(
+    createTransactionMessage({ version: 0 }),
+    (msg) => setTransactionMessageFeePayer(feePayer, msg),
+    (msg) => setTransactionMessageLifetimeUsingBlockhash(value, msg),
+    (msg) => appendTransactionMessageInstructions(instructions, msg),
+  )
+
+  const compiledTx = compileTransaction(txMessage)
+  const txEncoder = getTransactionEncoder()
+  const txBytes = txEncoder.encode(compiledTx)
+
+  return b58Decoder.decode(txBytes)
 }

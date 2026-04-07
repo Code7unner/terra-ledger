@@ -72,6 +72,69 @@ export function buildConnectUrl(
 /**
  * Decrypt the Phantom connect response using x25519 Diffie-Hellman.
  */
+/**
+ * Build a Phantom deeplink signAndSendTransaction URL.
+ */
+export function buildSignAndSendUrl(
+  dappKeyPair: DappKeyPair,
+  sessionToken: string,
+  phantomPubKeyB58: string,
+  transactionB58: string,
+  sessionId: string,
+): string {
+  const apiBase = import.meta.env.VITE_API_URL || window.location.origin
+  const redirectLink = `${apiBase}/api/v1/phantom/callback?session=${sessionId}`
+
+  const phantomPubKey = b58decode(phantomPubKeyB58)
+  const sharedSecret = nacl.box.before(phantomPubKey, dappKeyPair.secretKey)
+
+  const payload = JSON.stringify({
+    transaction: transactionB58,
+    session: sessionToken,
+  })
+
+  const nonce = nacl.randomBytes(24)
+  const encrypted = nacl.box.after(
+    new TextEncoder().encode(payload),
+    nonce,
+    sharedSecret,
+  )
+
+  const params = new URLSearchParams({
+    dapp_encryption_public_key: b58encode(dappKeyPair.publicKey),
+    nonce: b58encode(nonce),
+    redirect_link: redirectLink,
+    payload: b58encode(encrypted),
+  })
+
+  return `https://phantom.app/ul/v1/signAndSendTransaction?${params.toString()}`
+}
+
+/**
+ * Decrypt the Phantom signAndSendTransaction response.
+ * Returns the transaction signature.
+ */
+export function decryptSignResponse(
+  phantomPubKeyB58: string,
+  nonceB58: string,
+  dataB58: string,
+  dappKeyPair: DappKeyPair,
+): { signature: string } {
+  const phantomPubKey = b58decode(phantomPubKeyB58)
+  const nonce = b58decode(nonceB58)
+  const encryptedData = b58decode(dataB58)
+
+  const sharedSecret = nacl.box.before(phantomPubKey, dappKeyPair.secretKey)
+
+  const decrypted = nacl.box.open.after(encryptedData, nonce, sharedSecret)
+  if (!decrypted) {
+    throw new Error('Failed to decrypt Phantom sign response')
+  }
+
+  const json = JSON.parse(new TextDecoder().decode(decrypted))
+  return { signature: json.signature }
+}
+
 export function decryptConnectResponse(
   phantomPubKeyB58: string,
   nonceB58: string,

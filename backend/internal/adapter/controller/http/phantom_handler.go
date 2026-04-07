@@ -13,6 +13,7 @@ import (
 // phantomSession stores the Phantom deeplink callback response for relay.
 type phantomSession struct {
 	CreatedAt time.Time
+	Kind      string // "connect" or "sign"
 	// Filled by callback
 	PhantomPubKey string
 	Nonce         string
@@ -20,6 +21,8 @@ type phantomSession struct {
 	ErrorCode     string
 	ErrorMessage  string
 	Received      bool
+	// For sign sessions
+	Signature string
 }
 
 // PhantomHandler relays Phantom mobile deeplink responses to desktop sessions.
@@ -50,8 +53,17 @@ func (h *PhantomHandler) cleanup() {
 	}
 }
 
-// CreateSession generates a new relay session ID.
+// CreateSession generates a new relay session ID for connect flow.
 func (h *PhantomHandler) CreateSession(c *fiber.Ctx) error {
+	return h.createSessionWithKind(c, "connect")
+}
+
+// CreateSignSession generates a new relay session ID for sign+send flow.
+func (h *PhantomHandler) CreateSignSession(c *fiber.Ctx) error {
+	return h.createSessionWithKind(c, "sign")
+}
+
+func (h *PhantomHandler) createSessionWithKind(c *fiber.Ctx, kind string) error {
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "failed to generate session"})
@@ -60,6 +72,7 @@ func (h *PhantomHandler) CreateSession(c *fiber.Ctx) error {
 
 	h.sessions.Store(sessionID, &phantomSession{
 		CreatedAt: time.Now(),
+		Kind:      kind,
 	})
 
 	return c.JSON(fiber.Map{"session_id": sessionID})
@@ -92,18 +105,25 @@ h1{color:#ef4444;font-size:24px}p{color:#a0a0a0;font-size:16px}</style></head>
 <body><div><h1>Connection Denied</h1><p>%s</p><p>You can close this tab.</p></div></body></html>`, s.ErrorMessage))
 	}
 
-	// Success response
+	// Success response — connect or sign
 	s.PhantomPubKey = c.Query("phantom_encryption_public_key")
 	s.Nonce = c.Query("nonce")
 	s.Data = c.Query("data")
 	s.Received = true
 	h.sessions.Store(sessionID, s)
 
-	return c.Type("html").SendString(`<!DOCTYPE html>
+	title := "Wallet Connected"
+	msg := "Return to your computer to continue."
+	if s.Kind == "sign" {
+		title = "Transaction Signed"
+		msg = "Your transaction has been submitted. Return to your computer."
+	}
+
+	return c.Type("html").SendString(fmt.Sprintf(`<!DOCTYPE html>
 <html><head><meta name="viewport" content="width=device-width"><title>TerraLedger</title>
 <style>body{background:#0f0f0f;color:#ededed;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center}
 h1{color:#25d0ab;font-size:24px}p{color:#a0a0a0;font-size:16px}</style></head>
-<body><div><h1>Wallet Connected</h1><p>Return to your computer to continue.</p><p>You can close this tab.</p></div></body></html>`)
+<body><div><h1>%s</h1><p>%s</p><p>You can close this tab.</p></div></body></html>`, title, msg))
 }
 
 // Poll checks if the Phantom callback has been received for a session.

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import type { Address } from '@solana/kit'
 import type { WizardData } from '../WizardFlow'
 import { useSignAndSend } from '../../../solana/transaction'
-import { buildRegisterParcelInstruction } from '../../../solana/program'
+import { buildRegisterParcelInstruction, serializeTransactionB58 } from '../../../solana/program'
+import { usePhantomDeeplink } from '../../../solana/usePhantomDeeplink'
 import { useParcel } from '../../../hooks/useParcel'
 import { post } from '../../../api/client'
 import { useToast } from '../../../components/Toast/useToast'
@@ -47,10 +48,13 @@ const LAND_CLASS_OPTIONS = [
 
 export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onSkipToSummary }: Props) {
   const { signAndSend, connected, walletAddress: extensionWallet, txStatus } = useSignAndSend()
+  const { signAndSendTransaction: deeplinkSign, walletAddress: deeplinkWallet } = usePhantomDeeplink()
   const { registerParcel } = useParcel()
   const { toast } = useToast()
 
-  const walletAddress = extensionWallet ? String(extensionWallet) : data.walletAddress
+  const walletAddress = extensionWallet ? String(extensionWallet) : (deeplinkWallet || data.walletAddress)
+  const hasExtensionWallet = connected && !!extensionWallet
+  const hasDeeplinkWallet = !!deeplinkWallet || !!data.walletAddress
 
   const [cadastral, setCadastral] = useState(data.cadastral)
   const [areaHa, setAreaHa] = useState(data.area_ha || 0)
@@ -88,7 +92,7 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onS
     try {
       let alreadyOnChain = false
 
-      if (connected && walletAddress) {
+      if (walletAddress) {
         try {
           const egissHash = new Uint8Array(32)
           const ix = await buildRegisterParcelInstruction(
@@ -98,7 +102,13 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onS
             landClass,
             egissHash,
           )
-          await signAndSend([ix])
+
+          if (hasExtensionWallet) {
+            await signAndSend([ix])
+          } else if (hasDeeplinkWallet) {
+            const txB58 = await serializeTransactionB58([ix], walletAddress as Address)
+            await deeplinkSign(txB58)
+          }
         } catch (txErr: unknown) {
           const msg = txErr instanceof Error ? txErr.message : String(txErr)
           const isAlreadyRegistered =

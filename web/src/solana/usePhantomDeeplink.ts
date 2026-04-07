@@ -1,6 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { post, get } from '../api/client'
-import { getDappKeyPair, buildConnectUrl, decryptConnectResponse } from './phantom-deeplink'
+import {
+  getDappKeyPair,
+  buildConnectUrl,
+  decryptConnectResponse,
+  buildSignAndSendUrl,
+  decryptSignResponse,
+} from './phantom-deeplink'
 
 type DeeplinkStatus = 'idle' | 'waiting' | 'connected' | 'error'
 
@@ -86,6 +92,7 @@ export function usePhantomDeeplink() {
               setStatus('connected')
               localStorage.setItem('phantom_deeplink_wallet', result.public_key)
               localStorage.setItem('phantom_deeplink_session', result.session)
+              localStorage.setItem('phantom_deeplink_pubkey', resp.phantom_encryption_public_key!)
             } catch (decryptErr) {
               void decryptErr
               setError('Failed to decrypt wallet response')
@@ -108,6 +115,89 @@ export function usePhantomDeeplink() {
     }
   }, [stopPolling])
 
+  /**
+   * Sign and send a serialized transaction via Phantom deeplink.
+   * Opens Phantom on mobile, user approves, tx is submitted by Phantom,
+   * callback stores signature, we poll and return it.
+   */
+  const signAndSendTransaction = useCallback(
+    async (transactionB58: string): Promise<string> => {
+      const session = localStorage.getItem('phantom_deeplink_session')
+      const storedWallet = localStorage.getItem('phantom_deeplink_wallet')
+      if (!session || !storedWallet) {
+        throw new Error('Phantom deeplink not connected. Please reconnect wallet.')
+      }
+
+      // 1. Create a sign relay session on backend
+      const { session_id } = await post<SessionResponse>('/api/v1/phantom/sign-session', {})
+
+      // 2. Build deeplink URL
+      const dappKeyPair = getDappKeyPair()
+      // We need the phantom encryption public key — stored during connect
+      // Actually for signAndSendTransaction, Phantom uses the same shared secret from connect
+      // The phantomPubKey was used during connect decrypt — we need to store it
+      const phantomPubKey = localStorage.getItem('phantom_deeplink_pubkey')
+      if (!phantomPubKey) {
+        throw new Error('Missing Phantom encryption key. Please reconnect wallet.')
+      }
+
+      const url = buildSignAndSendUrl(
+        dappKeyPair,
+        session,
+        phantomPubKey,
+        transactionB58,
+        session_id,
+      )
+
+      // 3. Open deeplink
+      window.open(url, '_blank')
+
+      // 4. Poll for result
+      return new Promise<string>((resolve, reject) => {
+        const start = Date.now()
+        const interval = setInterval(async () => {
+          if (Date.now() - start > MAX_POLL_TIME) {
+            clearInterval(interval)
+            reject(new Error('Transaction signing timed out'))
+            return
+          }
+
+          try {
+            const resp = await get<PollResponse>(`/api/v1/phantom/poll/${session_id}`)
+            if (resp.status === 'pending') return
+
+            clearInterval(interval)
+
+            if (resp.status === 'error') {
+              reject(new Error(resp.error_message || 'Transaction rejected'))
+              return
+            }
+
+            if (resp.status === 'connected' && resp.nonce && resp.data) {
+              try {
+                const result = decryptSignResponse(
+                  resp.phantom_encryption_public_key!,
+                  resp.nonce,
+                  resp.data,
+                  dappKeyPair,
+                )
+                resolve(result.signature)
+              } catch (err) {
+                reject(new Error('Failed to decrypt sign response'))
+              }
+              return
+            }
+
+            reject(new Error('Unexpected response from Phantom'))
+          } catch {
+            // Network error during poll — keep trying
+          }
+        }, POLL_INTERVAL)
+      })
+    },
+    [],
+  )
+
   const disconnect = useCallback(() => {
     stopPolling()
     setStatus('idle')
@@ -116,10 +206,12 @@ export function usePhantomDeeplink() {
     setError(null)
     localStorage.removeItem('phantom_deeplink_wallet')
     localStorage.removeItem('phantom_deeplink_session')
+    localStorage.removeItem('phantom_deeplink_pubkey')
   }, [stopPolling])
 
   return {
     connectViaQR,
+    signAndSendTransaction,
     qrUrl,
     status,
     walletAddress,

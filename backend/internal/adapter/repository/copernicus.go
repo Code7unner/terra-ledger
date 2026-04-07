@@ -364,6 +364,23 @@ func buildTimeSeriesPayload(lat, lon float64, startDate, endDate string) ([]byte
 	return json.Marshal(payload)
 }
 
+// nanFloat64 handles Sentinel Hub returning "NaN" strings for fully-clouded intervals.
+type nanFloat64 float64
+
+func (n *nanFloat64) UnmarshalJSON(data []byte) error {
+	s := string(data)
+	if s == `"NaN"` || s == "null" {
+		*n = 0
+		return nil
+	}
+	var f float64
+	if err := json.Unmarshal(data, &f); err != nil {
+		return err
+	}
+	*n = nanFloat64(f)
+	return nil
+}
+
 func parseTimeSeriesResponse(r io.Reader) (*entity.SatelliteTimeSeries, error) {
 	var result struct {
 		Data []struct {
@@ -371,16 +388,7 @@ func parseTimeSeriesResponse(r io.Reader) (*entity.SatelliteTimeSeries, error) {
 				From string `json:"from"`
 				To   string `json:"to"`
 			} `json:"interval"`
-			Outputs map[string]struct {
-				Bands struct {
-					B0 struct {
-						Stats struct {
-							Mean        float64 `json:"mean"`
-							SampleCount int     `json:"sampleCount"`
-						} `json:"stats"`
-					} `json:"B0"`
-				} `json:"bands"`
-			} `json:"outputs"`
+			Outputs map[string]shBandStats `json:"outputs"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(r).Decode(&result); err != nil {
@@ -397,17 +405,19 @@ func parseTimeSeriesResponse(r io.Reader) (*entity.SatelliteTimeSeries, error) {
 	return ts, nil
 }
 
+type shBandStats struct {
+	Bands struct {
+		B0 struct {
+			Stats struct {
+				Mean        nanFloat64 `json:"mean"`
+				SampleCount int        `json:"sampleCount"`
+			} `json:"stats"`
+		} `json:"B0"`
+	} `json:"bands"`
+}
+
 func extractIndices(
-	outputs map[string]struct {
-		Bands struct {
-			B0 struct {
-				Stats struct {
-					Mean        float64 `json:"mean"`
-					SampleCount int     `json:"sampleCount"`
-				} `json:"stats"`
-			} `json:"B0"`
-		} `json:"bands"`
-	},
+	outputs map[string]shBandStats,
 	from, to string,
 ) *entity.SatelliteIndices {
 	ndviOut, ok := outputs["ndvi"]
@@ -417,10 +427,10 @@ func extractIndices(
 	periodStart, _ := time.Parse("2006-01-02T15:04:05Z", from)
 	periodEnd, _ := time.Parse("2006-01-02T15:04:05Z", to)
 
-	ndvi := ndviOut.Bands.B0.Stats.Mean
-	ndwi := outputs["ndwi"].Bands.B0.Stats.Mean
-	evi := outputs["evi"].Bands.B0.Stats.Mean
-	cloudFree := outputs["dataMask"].Bands.B0.Stats.Mean * 100
+	ndvi := float64(ndviOut.Bands.B0.Stats.Mean)
+	ndwi := float64(outputs["ndwi"].Bands.B0.Stats.Mean)
+	evi := float64(outputs["evi"].Bands.B0.Stats.Mean)
+	cloudFree := float64(outputs["dataMask"].Bands.B0.Stats.Mean) * 100
 	sampleCount := ndviOut.Bands.B0.Stats.SampleCount
 
 	return &entity.SatelliteIndices{

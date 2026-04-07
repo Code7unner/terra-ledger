@@ -39,6 +39,7 @@ func RegisterRoutes(app *fiber.App, h *Handlers, lenderRepo repository.LenderRep
 	// Phantom mobile deeplink relay (no auth — public endpoints)
 	phantom := NewPhantomHandler()
 	app.Post("/api/v1/phantom/session", phantom.CreateSession)
+	app.Post("/api/v1/phantom/sign-session", phantom.CreateSignSession)
 	app.Get("/api/v1/phantom/callback", phantom.Callback)
 	app.Get("/api/v1/phantom/poll/:session", phantom.Poll)
 

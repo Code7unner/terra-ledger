@@ -1,5 +1,6 @@
 # Plans
 /docs/plans
+/docs/demo
 
 # Claude
 .claude/
@@ -38,4 +39,3 @@ e2e/playwright-report/
 # OS
 .DS_Store
 *.swp
-.gstack/
