@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Address } from '@solana/kit'
 import type { WizardData } from '../WizardFlow'
 import { useSignAndSend } from '../../../solana/transaction'
-import { buildRegisterParcelInstruction, serializeTransactionB58 } from '../../../solana/program'
-import { usePhantomDeeplink } from '../../../solana/usePhantomDeeplink'
+import { buildRegisterParcelInstruction } from '../../../solana/program'
 import { useParcel } from '../../../hooks/useParcel'
 import { post } from '../../../api/client'
 import { useToast } from '../../../components/Toast/useToast'
@@ -48,13 +47,11 @@ const LAND_CLASS_OPTIONS = [
 
 export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onSkipToSummary }: Props) {
   const { signAndSend, connected, walletAddress: extensionWallet, txStatus } = useSignAndSend()
-  const { signAndSendTransaction: deeplinkSign, signQrUrl, signStatus, walletAddress: deeplinkWallet } = usePhantomDeeplink()
   const { registerParcel } = useParcel()
   const { toast } = useToast()
 
-  const walletAddress = extensionWallet ? String(extensionWallet) : (deeplinkWallet || data.walletAddress)
+  const walletAddress = extensionWallet ? String(extensionWallet) : data.walletAddress
   const hasExtensionWallet = connected && !!extensionWallet
-  const hasDeeplinkWallet = !!deeplinkWallet || !!data.walletAddress
 
   const [cadastral, setCadastral] = useState(data.cadastral)
   const [areaHa, setAreaHa] = useState(data.area_ha || 0)
@@ -92,7 +89,7 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onS
     try {
       let alreadyOnChain = false
 
-      if (walletAddress) {
+      if (hasExtensionWallet && walletAddress) {
         try {
           const egissHash = new Uint8Array(32)
           const ix = await buildRegisterParcelInstruction(
@@ -102,13 +99,7 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onS
             landClass,
             egissHash,
           )
-
-          if (hasExtensionWallet) {
-            await signAndSend([ix])
-          } else if (hasDeeplinkWallet) {
-            const txB58 = await serializeTransactionB58([ix], walletAddress as Address)
-            await deeplinkSign(txB58)
-          }
+          await signAndSend([ix])
         } catch (txErr: unknown) {
           const msg = txErr instanceof Error ? txErr.message : String(txErr)
           const isAlreadyRegistered =
@@ -219,30 +210,12 @@ export function RegisterParcelStep({ data, isDemo, onUpdate, onNext, onBack, onS
 
         {error && <p className={styles.error}>{error}</p>}
 
-        {signQrUrl && signStatus === 'waiting' && (
-          <div className={styles.walletHelp}>
-            <p className={styles.stepHint}>Scan with <strong>Phantom</strong> to sign the transaction:</p>
-            <div className={styles.qrPlaceholder}>
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=141414&color=ededed&data=${encodeURIComponent(signQrUrl)}`}
-                alt="Sign transaction with Phantom"
-                width={250}
-                height={250}
-              />
-            </div>
-            <div className={styles.loadingAnim}>
-              <div className={styles.spinner} />
-              <p className={styles.loadingMsg}>Waiting for signature...</p>
-            </div>
-          </div>
-        )}
-
         <div className={styles.stepActions}>
           <Button variant="secondary" onClick={onBack}>
             Back
           </Button>
           <Button
-            loading={submitting || txStatus === 'signing' || txStatus === 'confirming' || signStatus === 'waiting'}
+            loading={submitting || txStatus === 'signing' || txStatus === 'confirming'}
             onClick={handleSubmit}
           >
             Register Parcel
